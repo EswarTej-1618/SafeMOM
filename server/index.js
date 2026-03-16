@@ -65,78 +65,16 @@ app.use("/api/chat", require("./routes/chat"));
 app.use("/api/patient", require("./routes/patient"));
 app.use("/api/partner", require("./routes/partner"));
 
-// ─── Risk Alert Email (existing) ─────────────────────────────────────────────
+// ─── Risk Alert Email ────────────────────────────────────────────────────────
 const RISK_ALERT_EMAIL = "safemom.support@gmail.com";
-
-function getTransporter() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!user || !pass) {
-    return null;
-  }
-  // Use custom host/port if set (Outlook, Yahoo, etc.) – then you can often use normal password
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT;
-  if (host) {
-    return nodemailer.createTransport({
-      host,
-      port: port ? parseInt(port, 10) : 587,
-      secure: process.env.SMTP_SECURE === "true",
-      auth: { user, pass },
-    });
-  }
-  // For Gmail, use port 465 with true TLS to avoid Render outbound blocks on port 587
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-    // Force IPv4 to avoid IPv6 connection issues
-    family: 4,
-  });
-}
+const { sendEmail, escapeHtml: escapeHtmlUtil } = require("./utils/email");
 
 app.post("/api/send-risk-alert", async (req, res) => {
   const { riskLevel, summary, message, patientId } = req.body || {};
-  console.log(
-    "[Risk alert] Received:",
-    riskLevel ? "riskLevel=" + riskLevel : "missing riskLevel",
-  );
-  console.log("[Risk alert] Body:", JSON.stringify(req.body || {}));
+  console.log("[Risk alert] Received:", riskLevel ? "riskLevel=" + riskLevel : "missing riskLevel");
+  
   if (!riskLevel) {
     return res.status(400).json({ ok: false, error: "riskLevel is required" });
-  }
-
-  const transporter = getTransporter();
-  if (!transporter) {
-    console.log(
-      "[Risk alert] Email not configured (SMTP_USER/SMTP_PASS missing)",
-    );
-    return res.status(503).json({
-      ok: false,
-      error: "Email not configured. Set SMTP_USER and SMTP_PASS in .env.local",
-    });
-  }
-
-  // Verify transporter before attempting to send mail so failures are explicit in logs
-  try {
-    await transporter.verify();
-    console.log("[Risk alert] SMTP transporter verified");
-  } catch (verifyErr) {
-    console.error(
-      "[Risk alert] Transporter verify failed:",
-      verifyErr && (verifyErr.message || verifyErr),
-    );
-    return res
-      .status(500)
-      .json({
-        ok: false,
-        error:
-          "SMTP transporter verify failed: " +
-          (verifyErr && verifyErr.message
-            ? verifyErr.message
-            : String(verifyErr)),
-      });
   }
 
   // 1. Fetch patient and linked doctors
@@ -158,131 +96,77 @@ app.post("/api/send-risk-alert", async (req, res) => {
   // 2. Determine recipients
   const emailTargets = [];
   if (patient && patient.email) {
-    emailTargets.push({
-      email: patient.email,
-      name: patient.name,
-      isDoctor: false
-    });
+    emailTargets.push({ email: patient.email, name: patient.name, isDoctor: false });
   }
 
   linkedClinicians.forEach(doc => {
     if (doc.email) {
-      emailTargets.push({
-        email: doc.email,
-        name: doc.name,
-        isDoctor: true
-      });
+      emailTargets.push({ email: doc.email, name: doc.name, isDoctor: true });
     }
   });
 
-  // Also look up any partner linked to this mother and add them as a recipient
   if (patientId && patient) {
     try {
       const partnerLink = await PartnerLink.findOne({ motherId: patientId }).populate("partnerId");
       if (partnerLink && partnerLink.partnerId && partnerLink.partnerId.email) {
         const partnerUser = partnerLink.partnerId;
-        emailTargets.push({
-          email: partnerUser.email,
-          name: partnerUser.name,
-          isDoctor: false,
-          isPartner: true
-        });
+        emailTargets.push({ email: partnerUser.email, name: partnerUser.name, isDoctor: false, isPartner: true });
       }
     } catch (pErr) {
       console.error("[Risk alert] Error fetching partner link:", pErr);
     }
   }
 
-  // Fallback to default if no valid targets found
   if (emailTargets.length === 0) {
-    emailTargets.push({
-      email: RISK_ALERT_EMAIL,
-      name: "Admin",
-      isDoctor: true
-    });
+    emailTargets.push({ email: RISK_ALERT_EMAIL, name: "Admin", isDoctor: true });
   }
 
   let successCount = 0;
-  let lastInfo = null;
   let firstError = null;
 
   for (const target of emailTargets) {
-    // Subject could include the patient name if it's sent to doctor
     const subject = target.isDoctor && patient
         ? `[SafeMom] High risk identified for your patient: ${patient.name}`
         : `[SafeMom] High risk identified: ${riskLevel}`;
 
-    // Customize message for doctor or patient
     let emailMessage = message;
     if (message) {
       const greetingRegex = /^(hello|hi|dear)\s+[^,\n]+,/i;
-      
       if (target.isDoctor && patient) {
         const docGreeting = `Hi ${target.name} and your patient ${patient.name},`;
-        if (greetingRegex.test(message)) {
-          emailMessage = message.replace(greetingRegex, docGreeting);
-        } else {
-          emailMessage = `${docGreeting}\n\n${message}`;
-        }
+        emailMessage = greetingRegex.test(message) ? message.replace(greetingRegex, docGreeting) : `${docGreeting}\n\n${message}`;
       } else if (!target.isDoctor) {
         const patientGreeting = `Hi ${target.name},`;
-        if (greetingRegex.test(message)) {
-          emailMessage = message.replace(greetingRegex, patientGreeting);
-        } else {
-          emailMessage = `${patientGreeting}\n\n${message}`;
-        }
+        emailMessage = greetingRegex.test(message) ? message.replace(greetingRegex, patientGreeting) : `${patientGreeting}\n\n${message}`;
       }
     }
 
-    const text = [
-      `Risk level: ${riskLevel}`,
-      summary ? `Vitals summary: ${summary}` : "",
-      emailMessage ? `\nAI assessment:\n${emailMessage}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-
+    const text = [`Risk level: ${riskLevel}`, summary ? `Vitals summary: ${summary}` : "", emailMessage ? `\nAI assessment:\n${emailMessage}` : ""].filter(Boolean).join("\n");
+    
     const html = `
       <h2>SafeMom – High risk identified</h2>
       <p><strong>Risk level:</strong> ${riskLevel}</p>
       ${summary ? `<p><strong>Vitals summary:</strong> ${summary}</p>` : ""}
-      ${emailMessage ? `<h3>AI assessment</h3><pre style="white-space:pre-wrap;">${escapeHtml(emailMessage)}</pre>` : ""}
+      ${emailMessage ? `<h3>AI assessment</h3><pre style="white-space:pre-wrap;">${escapeHtmlUtil(emailMessage)}</pre>` : ""}
       <p><em>This is an automated alert from SafeMom. Please follow up with the mother/patient.</em></p>
     `.trim();
 
     try {
-      const info = await transporter.sendMail({
-        from: '"SafeMom Support" <safemom.support@gmail.com>',
-        to: target.email,
-        subject,
-        text,
-        html,
-      });
-      console.log("[Risk alert] Email sent to", target.email, "info:", info);
+      await sendEmail({ to: target.email, subject, text, html });
+      console.log("[Risk alert] Email sent to", target.email);
       successCount++;
-      lastInfo = info;
-
-      // Record successful notification
+      
       notificationHistory.addNotification({
-        status: 'success',
-        riskLevel,
-        recipient: target.email, // save actual recipient email
-        summary,
+        status: 'success', riskLevel, recipient: target.email, summary,
         messagePreview: emailMessage ? emailMessage.substring(0, 100) + '...' : '',
-        messageId: info.messageId,
-        response: info.response
+        messageId: 'resend', response: 'sent'
       });
-
     } catch (err) {
-      console.error("[Risk alert] Email failed to", target.email, ":", err && (err.message || err));
+      console.error("[Risk alert] Email failed to", target.email, ":", err.message);
       if (!firstError) firstError = err;
-
-      // Record failed notification
+      
       notificationHistory.addNotification({
-        status: 'failed',
-        riskLevel,
-        recipient: target.email,
-        summary,
+        status: 'failed', riskLevel, recipient: target.email, summary,
         messagePreview: emailMessage ? emailMessage.substring(0, 100) + '...' : '',
         error: err.message || 'Unknown error'
       });
@@ -290,7 +174,7 @@ app.post("/api/send-risk-alert", async (req, res) => {
   }
 
   if (successCount > 0) {
-    res.json({ ok: true, info: lastInfo, sentCount: successCount });
+    res.json({ ok: true, sentCount: successCount });
   } else {
     res.status(500).json({ ok: false, error: firstError ? firstError.message : "Failed to send any emails" });
   }
