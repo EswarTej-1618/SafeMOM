@@ -31,12 +31,17 @@ export function markdownReportToHtml(markdown: string): string {
       continue;
     }
 
-    if (trimmed.startsWith("* ") || trimmed.startsWith("- ")) {
+    if (trimmed.startsWith("* ") || trimmed.startsWith("- ") || /^\d+\.\s/.test(trimmed)) {
       if (!inList) {
         out.push('<ul class="report-list">');
         inList = true;
       }
-      const content = applyBoldToHtml(trimmed.slice(2).trim());
+      const isNumbered = /^\d+\.\s/.test(trimmed);
+      let sliceIndex = 2;
+      if (isNumbered) {
+        sliceIndex = trimmed.indexOf(" ") + 1;
+      }
+      const content = applyBoldToHtml(trimmed.slice(sliceIndex).trim());
       out.push(`<li>${content}</li>`);
       continue;
     }

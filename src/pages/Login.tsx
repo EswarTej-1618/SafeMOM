@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Baby, Stethoscope, HeartHandshake } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Baby, Stethoscope, HeartHandshake, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import PartnerIcon from "@/components/icons/PartnerIcon";
 
 const roleConfig = {
   mother: {
@@ -24,6 +25,11 @@ const roleConfig = {
     icon: HeartHandshake,
     color: "text-accent",
   },
+  partner: {
+    title: "Partner / Husband",
+    icon: PartnerIcon,
+    color: "text-primary",
+  },
 };
 
 const Login = () => {
@@ -38,27 +44,39 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const success = login(email, password, roleId);
-    if (success) {
-      if (roleId === "doctor" || roleId === "asha") {
-        navigate("/patient-details", { replace: true });
-      } else if (roleId === "mother") {
-        navigate("/mother-dashboard", { replace: true });
+
+    if (!email.trim() || !password) {
+      setError("Please enter both email and password.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await login(email.trim(), password, roleId);
+      if (result.success) {
+        if (roleId === "doctor") {
+          navigate("/doctor-patients", { replace: true });
+        } else if (roleId === "asha") {
+          navigate("/patient-details", { replace: true });
+        } else if (roleId === "mother") {
+          navigate("/mother-dashboard", { replace: true });
+        } else if (roleId === "partner") {
+          navigate("/partner-dashboard", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       } else {
-        navigate("/", { replace: true });
+        setError(result.error || "Invalid email or password.");
       }
-    } else {
-      const hint =
-        roleId === "doctor"
-          ? "doctor@safemom.com / doctor123"
-          : roleId === "asha"
-            ? "asha@safemom.com / asha123"
-            : "priya@safemom.com / priya123 (or any email and password)";
-      setError(`Invalid email or password. Demo: ${hint}`);
+    } catch {
+      setError("Network error. Is the server running?");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -166,6 +184,7 @@ const Login = () => {
               <div className="flex justify-end">
                 <button
                   type="button"
+                  onClick={() => navigate("/forgot-password")}
                   className="text-sm text-primary hover:underline"
                 >
                   Forgot Password?
@@ -181,9 +200,11 @@ const Login = () => {
               {/* Submit Button */}
               <Button
                 type="submit"
+                disabled={loading}
                 className="w-full h-12 rounded-xl text-base font-medium shadow-soft hover:shadow-card transition-all duration-300"
               >
-                Sign In
+                {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                {loading ? "Signing in..." : "Sign In"}
               </Button>
             </motion.form>
 
@@ -198,7 +219,7 @@ const Login = () => {
               <button
                 type="button"
                 className="text-primary font-medium hover:underline"
-                onClick={() => navigate("/signup")}
+                onClick={() => navigate(`/signup?role=${roleId}`)}
               >
                 Sign Up
               </button>

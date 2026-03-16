@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Bot, Activity, FileHeart, Brain, Building2 } from "lucide-react";
+import { Bot, Activity, FileHeart, Brain, Building2, Bell, MapPin, HeartPulse } from "lucide-react";
+import PartnerIcon from "@/components/icons/PartnerIcon";
 
 const features = [
   {
@@ -37,6 +38,34 @@ const features = [
     description: "Cloud-based, multi-clinic ready architecture with centralized monitoring dashboard. Scalable for global use.",
     color: "text-health-warning",
     bgColor: "bg-health-warning/10",
+  },
+  {
+    icon: PartnerIcon,
+    title: "Partner / Husband Dashboard",
+    description: "Husbands and partners get a dedicated read-only dashboard to stay informed about their partner's pregnancy health, vitals, and risk alerts.",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+  },
+  {
+    icon: HeartPulse,
+    title: "Live Vitals Monitoring",
+    description: "Real-time streaming vitals with interactive charts. Track blood pressure, SpO₂, heart rate, and more with instant trend analysis.",
+    color: "text-heart",
+    bgColor: "bg-heart/10",
+  },
+  {
+    icon: Bell,
+    title: "Smart Email Risk Alerts",
+    description: "Automated risk-alert emails sent to doctors, ASHA workers, and linked partners when high-risk patterns are detected in vitals or chats.",
+    color: "text-health-warning",
+    bgColor: "bg-health-warning/10",
+  },
+  {
+    icon: MapPin,
+    title: "Nearby Hospital Finder",
+    description: "Locate hospitals near the mother in real-time using maps integration. One-tap navigation for emergency preparedness.",
+    color: "text-heart",
+    bgColor: "bg-heart/10",
   },
 ];
 

@@ -13,6 +13,13 @@ export interface JourneyPoint {
   details?: string;
 }
 
+export interface Appointment {
+  date: string | Date;
+  purpose: string;
+  status: "scheduled" | "completed" | "cancelled";
+  createdAt?: string | Date;
+}
+
 export interface Patient {
   id: string;
   name: string;
@@ -25,6 +32,8 @@ export interface Patient {
   journey: JourneyPoint[];
   riskReasons: string[];
   riskRecommendations: string[];
+  pregnancyStartDate?: string | Date;
+  appointments?: Appointment[];
 }
 
 const RISK_ORDER: Record<RiskLevel, number> = { high: 0, medium: 1, low: 2 };

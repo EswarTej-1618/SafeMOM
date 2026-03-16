@@ -21,9 +21,9 @@ const RoleCard = React.forwardRef<HTMLDivElement, RoleCardProps>(
         whileHover={{ y: -8, scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={onClick}
-        className="cursor-pointer group"
+        className="cursor-pointer group h-full"
       >
-        <div className="relative bg-card rounded-2xl p-8 shadow-card hover:shadow-lg transition-all duration-300 border border-border/50 overflow-hidden">
+        <div className="relative bg-card rounded-2xl p-8 shadow-card hover:shadow-lg transition-all duration-300 border border-border/50 overflow-hidden h-full flex flex-col">
           {/* Gradient overlay on hover */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           

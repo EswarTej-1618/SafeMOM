@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Baby, Stethoscope, HeartHandshake, ArrowLeft } from "lucide-react";
+import PartnerIcon from "@/components/icons/PartnerIcon";
 import Navbar from "@/components/Navbar";
 import RoleCard from "@/components/RoleCard";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,12 @@ const RoleSelect = () => {
       title: "ASHA Worker",
       description: "Support mothers in your community with care coordination",
       icon: HeartHandshake,
+    },
+    {
+      id: "partner",
+      title: "Partner / Husband",
+      description: "Stay informed and view your partner's pregnancy health at a glance",
+      icon: PartnerIcon,
     },
   ];
 
@@ -78,7 +85,7 @@ const RoleSelect = () => {
           </motion.div>
 
           {/* Role Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {roles.map((role, index) => (
               <RoleCard
                 key={role.id}

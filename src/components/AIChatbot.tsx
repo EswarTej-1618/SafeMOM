@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   AlertCircle,
   CheckCircle2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,14 +35,17 @@ import {
 } from "@/lib/gemini";
 import type { MotherSignupProfile } from "@/data/motherProfiles";
 import { appendVitalsHistory } from "@/data/motherProfiles";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchChatHistory, saveChatSession, deleteChatSession } from "@/lib/chatApi";
+import { useToast } from "./ui/use-toast";
 
-const STORAGE_KEY = "safemom-chat-history";
 
 interface Message {
   id: number;
   text: string;
   isBot: boolean;
   timestamp: Date;
+  riskLevel?: RiskLevel;
 }
 
 interface ChatSession {
@@ -57,7 +61,7 @@ type ChatMode = "select" | "vitals" | "chat";
 
 type RiskLevel = "risky" | "high" | "moderate" | "normal";
 
-const detectRiskLevel = (text: string): RiskLevel | null => {
+export const detectRiskLevel = (text: string): RiskLevel | null => {
   const match = text.match(
     /(?:classified as|risk is|overall risk)\s+(?:is\s+)?(?:classified\s+as\s+)?\*?\*?\s*(Risky|High|Moderate|Normal)\s*\*?\*?/i
   );
@@ -138,7 +142,7 @@ const SYMPTOM_QUESTIONS: { key: SymptomKey; label: string }[] = [
 
 const RISK_ALERT_API = (import.meta.env.VITE_API_URL ?? "") + "/api/send-risk-alert";
 
-async function sendRiskAlertEmail(riskLevel: string, summary: string, message: string) {
+async function sendRiskAlertEmail(riskLevel: string, summary: string, message: string, patientId?: string) {
   console.log(`[EMAIL ALERT] Attempting to send ${riskLevel.toUpperCase()} risk alert...`);
   console.log(`[EMAIL ALERT] API URL: ${RISK_ALERT_API}`);
   console.log(`[EMAIL ALERT] Summary: ${summary}`);
@@ -147,7 +151,7 @@ async function sendRiskAlertEmail(riskLevel: string, summary: string, message: s
     const res = await fetch(RISK_ALERT_API, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ riskLevel, summary, message }),
+      body: JSON.stringify({ riskLevel, summary, message, patientId }),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -184,12 +188,14 @@ const createVitalsFromForm = (form: {
   spo2: string;
   bloodPressure: string;
   glucose: string;
+  temperature: string;
 } & Record<SymptomKey, string>): VitalsInput => {
   const hr = Number(form.heartRate) || 80;
   const stress = Number(form.stress) || 40;
   const spo2 = Number(form.spo2) || 98;
   const bp = Number(form.bloodPressure) || 120;
   const glucose = Number(form.glucose) || 95;
+  const temp = Number(form.temperature) || 36.6;
 
   const vitals: VitalsInput = {
     heartRate: {
@@ -222,26 +228,18 @@ const createVitalsFromForm = (form: {
       status: getVitalsStatus(glucose, 120, 140),
       normalRange: "70-120 mg/dL",
     },
+    temperature: {
+      value: temp,
+      unit: "°C",
+      status: temp <= 37.5 ? "Normal" : temp <= 38.5 ? "Moderate" : "Risky",
+      normalRange: "36.1-37.5 °C",
+    },
   };
   const symptoms = parseSymptomsForm(form as Record<SymptomKey, string>);
   vitals.symptoms = symptoms;
   return vitals;
 };
 
-const loadHistory = (): ChatSession[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveToHistory = (session: ChatSession) => {
-  const history = loadHistory();
-  history.unshift(session);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, 50)));
-};
 
 interface AIChatbotProps {
   vitals?: VitalsInput | null;
@@ -250,8 +248,11 @@ interface AIChatbotProps {
 }
 
 const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<ChatMode>("select");
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -264,6 +265,7 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
     spo2: "",
     bloodPressure: "",
     glucose: "",
+    temperature: "",
     tired: "",
     headacheFever: "",
     abdominalPain: "",
@@ -271,6 +273,8 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
     blurredVisionDizziness: "",
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [useManualInput, setUseManualInput] = useState(false);
 
   useEffect(() => {
     if (vitals) {
@@ -281,13 +285,22 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
         spo2: String(vitals.spo2.value),
         bloodPressure: String(vitals.bloodPressure.value),
         glucose: String(vitals.glucose.value),
+        temperature: String(vitals.temperature?.value ?? ""),
       }));
     }
   }, [vitals]);
 
   useEffect(() => {
-    setHistory(loadHistory());
-  }, [isOpen, showHistory]);
+    async function loadHistory() {
+      if (user?.id) {
+        const dbHistory = await fetchChatHistory(user.id);
+        setHistory(dbHistory);
+      } else {
+        setHistory([]);
+      }
+    }
+    loadHistory();
+  }, [isOpen, showHistory, user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -300,13 +313,39 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
   const resetChat = () => {
     setMode("select");
     setMessages([]);
+    setCurrentSessionId(null);
     setInputValue("");
     setError(null);
+    setUseManualInput(false);
   };
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) resetChat();
+  };
+
+  const handleDeleteSession = async (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    if (!user?.id) return;
+
+    const success = await deleteChatSession(sessionId);
+    if (success) {
+      setHistory(prev => prev.filter(s => s.id !== sessionId));
+      toast({
+        title: "Session deleted",
+        description: "The chat session was removed from your history.",
+      });
+      if (messages.length > 0 && mode !== "select") {
+        // Option to clear screen if current session deleted, or leave screen as is.
+        // We will just leave screen.
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Could not delete the chat session.",
+        variant: "destructive"
+      });
+    }
   };
 
   const sendToGemini = async (userText: string, useVitals?: VitalsInput) => {
@@ -325,10 +364,13 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
   };
 
   const handleAnalyzeVitals = async () => {
-    let vitalsToUse: VitalsInput = vitals ?? createVitalsFromForm(vitalsForm);
-    if (vitals) {
-      vitalsToUse = { ...vitalsToUse, symptoms: parseSymptomsForm(vitalsForm) };
-    }
+    // If sensors are connected but user chose manual mode, use form values.
+    // Otherwise, prefer live sensor data (vitals prop).
+    const useSensorData = vitals && !useManualInput;
+    let vitalsToUse: VitalsInput = useSensorData ? vitals! : createVitalsFromForm(vitalsForm);
+    // Always merge symptom answers from the form
+    vitalsToUse = { ...vitalsToUse, symptoms: parseSymptomsForm(vitalsForm) };
+
     const userMsg: Message = {
       id: 1,
       text: "Analyze my vitals",
@@ -340,39 +382,55 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
 
     try {
       const response = await sendToGemini("", vitalsToUse);
+      const riskLevel = detectRiskLevel(response);
       const botMsg: Message = {
         id: 2,
         text: response,
         isBot: true,
         timestamp: new Date(),
+        riskLevel: riskLevel ?? undefined,
       };
       setMessages((prev) => [...prev, botMsg]);
-      saveToHistory({
-        id: crypto.randomUUID(),
+
+      const sessionData: ChatSession = {
+        id: currentSessionId || crypto.randomUUID(),
         mode: "vitals",
         title: `Vitals Analysis • ${new Date().toLocaleString()}`,
         messages: [userMsg, botMsg],
         vitalsResult: response,
         createdAt: new Date().toISOString(),
-      });
+      };
+
+      if (!currentSessionId) setCurrentSessionId(sessionData.id);
+
+      if (user?.id) {
+        await saveChatSession(user.id, sessionData);
+        // Refresh history
+        const dbHistory = await fetchChatHistory(user.id);
+        setHistory(dbHistory);
+      } else {
+        toast({
+          title: "Not Saved",
+          description: "Please log in to save chat history.",
+        });
+      }
+
       if (motherProfile) {
-        const riskLevel = detectRiskLevel(response) ?? undefined;
         const v = vitalsToUse;
         const summary = `HR ${v.heartRate.value}, BP ${v.bloodPressure.value}, SpO2 ${v.spo2.value}, Glucose ${v.glucose.value}`;
         appendVitalsHistory(motherProfile.id, {
           timestamp: new Date().toISOString(),
           vitalsSummary: summary,
-          riskLevel,
+          riskLevel: riskLevel ?? undefined,
         });
         if (riskLevel === "high" || riskLevel === "risky") {
-          sendRiskAlertEmail(riskLevel, summary, response);
+          sendRiskAlertEmail(riskLevel, summary, response, user?.id);
         }
       } else {
-        const riskLevel = detectRiskLevel(response);
         if (riskLevel === "high" || riskLevel === "risky") {
           const v = vitalsToUse;
           const summary = `HR ${v.heartRate.value}, BP ${v.bloodPressure.value}, SpO2 ${v.spo2.value}, Glucose ${v.glucose.value}`;
-          sendRiskAlertEmail(riskLevel, summary, response);
+          sendRiskAlertEmail(riskLevel, summary, response, user?.id);
         }
       }
     } finally {
@@ -404,28 +462,45 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
           return acc;
         }, []);
       const response = await chatWithGemini(text, historyForApi);
+      const chatRiskLevel = detectRiskLevel(response);
       const botMsg: Message = {
         id: newMessages.length + 1,
         text: response,
         isBot: true,
         timestamp: new Date(),
+        riskLevel: chatRiskLevel ?? undefined,
       };
       setMessages((prev) => [...prev, botMsg]);
-      const chatRiskLevel = detectRiskLevel(response);
+
       if (chatRiskLevel === "high" || chatRiskLevel === "risky") {
         sendRiskAlertEmail(
           chatRiskLevel,
           "Chat assessment",
-          response
+          response,
+          user?.id
         );
       }
-      saveToHistory({
-        id: crypto.randomUUID(),
+
+      const sessionData: ChatSession = {
+        id: currentSessionId || crypto.randomUUID(),
         mode: "chat",
         title: text.slice(0, 30) + (text.length > 30 ? "..." : ""),
         messages: [...newMessages, botMsg],
         createdAt: new Date().toISOString(),
-      });
+      };
+
+      if (!currentSessionId) setCurrentSessionId(sessionData.id);
+
+      if (user?.id) {
+        await saveChatSession(user.id, sessionData);
+        const dbHistory = await fetchChatHistory(user.id);
+        setHistory(dbHistory);
+      } else {
+        toast({
+          title: "Not Saved",
+          description: "Please log in to save chat history.",
+        });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to get response.";
       setError(msg);
@@ -530,26 +605,38 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
                           history.map((s) => (
                             <div
                               key={s.id}
-                              className="p-3 rounded-lg hover:bg-secondary cursor-pointer text-left"
+                              className="p-3 rounded-lg hover:bg-secondary cursor-pointer text-left relative group flex items-center justify-between"
                               onClick={() => {
                                 setMode(s.mode);
                                 setMessages(s.messages);
+                                setCurrentSessionId(s.id);
                                 setShowHistory(false);
                               }}
                             >
-                              <div className="flex items-center gap-2">
-                                {s.mode === "vitals" ? (
-                                  <Activity className="w-4 h-4 text-health-good" />
-                                ) : (
-                                  <MessageSquare className="w-4 h-4 text-primary" />
-                                )}
-                                <span className="text-sm font-medium truncate flex-1">
-                                  {s.title}
-                                </span>
+                              <div className="flex-1 min-w-0 pr-4">
+                                <div className="flex items-center gap-2">
+                                  {s.mode === "vitals" ? (
+                                    <Activity className="w-4 h-4 text-health-good" />
+                                  ) : (
+                                    <MessageSquare className="w-4 h-4 text-primary" />
+                                  )}
+                                  <span className="text-sm font-medium truncate flex-1 block">
+                                    {s.title}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {formatSessionDate(s.createdAt)}
+                                </p>
                               </div>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                {formatSessionDate(s.createdAt)}
-                              </p>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => handleDeleteSession(e, s.id)}
+                                title="Delete Session"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           ))
                         )}
@@ -574,7 +661,10 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
                 </p>
                 <div className="grid gap-2">
                   <button
-                    onClick={() => setMode("vitals")}
+                    onClick={() => {
+                      setMode("vitals");
+                      setCurrentSessionId(crypto.randomUUID());
+                    }}
                     className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors text-left"
                   >
                     <div className="w-12 h-12 rounded-xl bg-health-good/10 flex items-center justify-center">
@@ -591,6 +681,7 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
                   <button
                     onClick={() => {
                       setMode("chat");
+                      setCurrentSessionId(crypto.randomUUID());
                       setMessages([
                         {
                           id: 1,
@@ -630,10 +721,60 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
                 </div>
                 <ScrollArea className="flex-1 px-4">
                   <div className="space-y-3 pb-4">
+                    {/* Sensor / Manual toggle — only shown when live sensor vitals are available */}
+                    {vitals && (
+                      <div className="flex gap-2 p-1 bg-secondary rounded-lg">
+                        <button
+                          onClick={() => setUseManualInput(false)}
+                          className={`flex-1 text-sm py-1.5 rounded-md font-medium transition-colors ${
+                            !useManualInput
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          🔴 Live Sensor Data
+                        </button>
+                        <button
+                          onClick={() => setUseManualInput(true)}
+                          className={`flex-1 text-sm py-1.5 rounded-md font-medium transition-colors ${
+                            useManualInput
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          ✏️ Manual Input
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Sensor summary card (when sensors connected & sensor mode active) */}
+                    {vitals && !useManualInput && (
+                      <div className="rounded-xl border border-border bg-secondary/40 p-3 space-y-1.5">
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">📡 Live from ESP32 Sensors</p>
+                        {([
+                          { label: "Heart Rate", v: vitals.heartRate },
+                          { label: "Stress", v: vitals.stress },
+                          { label: "SpO₂", v: vitals.spo2 },
+                          { label: "Blood Pressure", v: vitals.bloodPressure },
+                          { label: "Glucose", v: vitals.glucose },
+                          { label: "Temperature", v: vitals.temperature },
+                        ] as { label: string; v: { value: number; unit: string; status: string } | undefined }[]).filter(x => x.v).map(({ label, v }) => (
+                          <div key={label} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{label}</span>
+                            <span className={`font-semibold ${
+                              v!.status === "Normal" ? "text-health-good" :
+                              v!.status === "Moderate" ? "text-health-warning" : "text-health-danger"
+                            }`}>{v!.value} {v!.unit}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Input form — shown when no sensors OR manual mode selected */}
+                    {(!vitals || useManualInput) && (
+                    <>
                     <p className="text-sm text-muted-foreground">
-                      {vitals
-                        ? "Using live vitals from dashboard. Click Analyze to assess."
-                        : "Enter your vitals below:"}
+                      {useManualInput ? "Override with manual values:" : "Enter your vitals below:"}
                     </p>
                     <div className="grid gap-2">
                       {[
@@ -642,6 +783,7 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
                         { key: "spo2", label: "SpO₂ (%)", placeholder: "95-100" },
                         { key: "bloodPressure", label: "Blood Pressure (mmHg)", placeholder: "< 130" },
                         { key: "glucose", label: "Glucose (mg/dL)", placeholder: "70-120" },
+                        { key: "temperature", label: "Temperature (°C)", placeholder: "36-37.5" },
                       ].map(({ key, label, placeholder }) => (
                         <div key={key} className="grid gap-1">
                           <Label className="text-xs">{label}</Label>
@@ -655,12 +797,13 @@ const AIChatbot = ({ vitals, motherProfile }: AIChatbotProps) => {
                                 [key]: e.target.value,
                               }))
                             }
-                            disabled={!!vitals}
                             className="h-9"
                           />
                         </div>
                       ))}
                     </div>
+                    </>
+                    )}
                     <p className="text-xs font-medium text-foreground pt-2 border-t border-border/50">
                       Quick symptoms (more info = better result)
                     </p>

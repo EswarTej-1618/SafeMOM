@@ -1,27 +1,31 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bot, Activity, Menu, X, Sun, Moon, Users, Stethoscope, LogOut, Bell } from "lucide-react";
+import { Bot, Activity, Menu, X, Sun, Moon, Users, Stethoscope, LogOut, Bell, Settings } from "lucide-react";
+import PartnerIcon from "@/components/icons/PartnerIcon";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import HospitalMapIcon from "@/components/HospitalMapIcon";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const { user, isAuthenticated, isDoctor, isAsha, logout } = useAuth();
+  const { user, isAuthenticated, isDoctor, isAsha, isPartner, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isHome = location.pathname === "/";
 
   const navLinks = [
     { name: "Home", href: "/" },
-    ...(isDoctor || isAsha ? [{ name: "Patient details", href: "/patient-details", icon: Users }] : []),
+    ...(isDoctor ? [{ name: "My Patients", href: "/doctor-patients", icon: Users }] : []),
+    ...(isAsha ? [{ name: "Patient details", href: "/patient-details", icon: Users }] : []),
     ...(user?.role === "mother" ? [{ name: "My Profile", href: "/mother-dashboard", icon: Users }] : []),
+    ...(isPartner ? [{ name: "Partner Dashboard", href: "/partner-dashboard", icon: PartnerIcon }] : []),
     { name: "AI Bots", href: "/ai-bots", icon: Bot },
-    ...(isAsha ? [] : [{ name: "Live Vitals", href: "/live-vitals", icon: Activity }]),
+    ...(user?.role === "mother" ? [{ name: "Live Vitals", href: "/live-vitals", icon: Activity }] : []),
     ...(isDoctor || isAsha ? [{ name: "Notifications", href: "/notification-history", icon: Bell }] : []),
     { name: "Features", href: isHome ? "#features" : "/#features" },
     { name: "Contact", href: isHome ? "#contact" : "/#contact" },
@@ -91,6 +95,16 @@ const Navbar = () => {
 
           {/* Right side: theme toggle + logged-in profile or Login/Sign Up */}
           <div className="hidden md:flex items-center gap-4">
+            {user?.role === "mother" && (
+              <Link
+                to="/nearby-hospitals"
+                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors flex items-center justify-center"
+                aria-label="Nearby Hospitals Finder"
+                title="Nearby Hospitals Finder"
+              >
+                <HospitalMapIcon className="w-5 h-5" />
+              </Link>
+            )}
             <button
               type="button"
               onClick={toggleTheme}
@@ -102,6 +116,7 @@ const Navbar = () => {
             {isAuthenticated && user ? (
               <div className="flex items-center gap-3 pl-3 border-l border-border">
                 <Avatar className="h-9 w-9">
+                  {user.avatar && <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />}
                   <AvatarFallback className="bg-primary/20 text-primary">
                     {isDoctor ? <Stethoscope className="w-4 h-4" /> : null}
                     {!isDoctor && user.name ? (
@@ -115,6 +130,16 @@ const Navbar = () => {
                     {user.email}
                   </p>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full text-muted-foreground hover:text-foreground shrink-0"
+                  onClick={() => navigate("/account-settings")}
+                  aria-label="Account settings"
+                  title="Account settings"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -149,6 +174,15 @@ const Navbar = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center gap-2">
+            {user?.role === "mother" && (
+              <Link
+                to="/nearby-hospitals"
+                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors flex items-center justify-center"
+                aria-label="Nearby Hospitals Finder"
+              >
+                <HospitalMapIcon className="w-5 h-5" />
+              </Link>
+            )}
             <button
               type="button"
               onClick={toggleTheme}
@@ -194,6 +228,7 @@ const Navbar = () => {
                 {isAuthenticated && user ? (
                   <div className="flex items-center gap-2 w-full py-2 px-3 rounded-lg bg-muted/50">
                     <Avatar className="h-9 w-9">
+                      {user.avatar && <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />}
                       <AvatarFallback className="bg-primary/20 text-primary text-xs">
                         {isDoctor ? <Stethoscope className="w-4 h-4" /> : user.name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
@@ -202,6 +237,18 @@ const Navbar = () => {
                       <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full shrink-0"
+                      onClick={() => {
+                        navigate("/account-settings");
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <Settings className="w-4 h-4 mr-1" />
+                      Settings
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

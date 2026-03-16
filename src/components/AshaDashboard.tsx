@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -30,6 +30,9 @@ import {
 } from "@/data/patients";
 import { AddNewMotherDialog, type NewMotherFormData } from "./AddNewMotherDialog";
 import { cn } from "@/lib/utils";
+import { fetchLinkedPatients, linkPatient, fetchPatientRiskHistory } from "@/lib/patientApi";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 function getInitials(name: string) {
   return name
@@ -48,19 +51,7 @@ function formatToday() {
   });
 }
 
-function formToAshaPatient(data: NewMotherFormData): AshaPatient {
-  return {
-    id: `new-${Date.now()}`,
-    name: data.name.trim(),
-    age: parseInt(data.age, 10) || 0,
-    weeksPregnant: parseInt(data.weekOfPregnancy, 10) || 0,
-    bloodType: "-",
-    riskLevel: "low",
-    pregnancyOrder: data.pregnancyOrder as PregnancyOrder,
-    isNew: true,
-    followUpNeeded: false,
-  };
-}
+// Removed formToAshaPatient
 
 interface AshaDashboardProps {
   ashaName: string;
@@ -68,10 +59,13 @@ interface AshaDashboardProps {
 
 export function AshaDashboard({ ashaName }: AshaDashboardProps) {
   const navigate = useNavigate();
-  const [patients, setPatients] = useState<AshaPatient[]>(ashaPatients);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [patients, setPatients] = useState<AshaPatient[]>(ashaPatients || []);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<PatientStatusFilter>("highRisk");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [isLinking, setIsLinking] = useState(false);
 
   const filteredPatients = useMemo(() => {
     let list = patients;
@@ -85,6 +79,87 @@ export function AshaDashboard({ ashaName }: AshaDashboardProps) {
     return list;
   }, [patients, search, filter]);
 
+  const loadPatients = async () => {
+    if (!user?.id) return;
+    try {
+      const linkedUserIds = await fetchLinkedPatients(user.id);
+
+      const formatted: AshaPatient[] = await Promise.all(
+        linkedUserIds.map(async (link: any) => {
+          let riskLevel: "low" | "high" = "low";
+          let referralText: string | undefined = undefined;
+
+          try {
+            const risks = await fetchPatientRiskHistory(link._id);
+            if (risks && risks.length > 0) {
+              riskLevel = "high";
+
+              let allKeyFactors: string[] = [];
+              risks.forEach((session: any) => {
+                const messages = session.messages || [];
+                const highRiskIndex = messages.findIndex((m: any) => m.riskLevel === "high" || m.riskLevel === "risky");
+
+                if (session.mode === "vitals") {
+                  allKeyFactors.push("Abnormal Vitals / Symptoms");
+                } else if (highRiskIndex > 0) {
+                  const userMessage = messages[highRiskIndex - 1];
+                  const text = (userMessage.text || "").trim();
+                  if (text.length > 0) {
+                    if (text.length <= 60) {
+                      allKeyFactors.push(text.charAt(0).toUpperCase() + text.slice(1));
+                    } else {
+                      allKeyFactors.push("Reported high-risk symptom");
+                    }
+                  }
+                } else if (messages && messages.length > 0) {
+                  const userMessages = messages.filter((m: any) => !m.isBot);
+                  if (userMessages.length > 0) {
+                    const lastUserMsg = userMessages[userMessages.length - 1];
+                    const text = (lastUserMsg.text || "").trim();
+                    if (text.length > 0) {
+                      allKeyFactors.push(text.length <= 60 ? text.charAt(0).toUpperCase() + text.slice(1) : "Reported high-risk symptom");
+                    }
+                  }
+                }
+              });
+
+              allKeyFactors = Array.from(new Set(allKeyFactors)).filter(Boolean);
+              if (allKeyFactors.length > 0) {
+                referralText = allKeyFactors.slice(0, 2).join(", ");
+              } else {
+                referralText = "High-risk interaction detected";
+              }
+            }
+          } catch (e) {
+            console.error("Failed to fetch risk history", e);
+          }
+
+          return {
+            id: link._id,
+            name: link.name,
+            age: link.age || 25,
+            weeksPregnant: link.gestationWeek || 0,
+            bloodType: link.bloodGroup || "-",
+            riskLevel: riskLevel,
+            pregnancyOrder: "1st" as PregnancyOrder,
+            isNew: false,
+            followUpNeeded: riskLevel === "high",
+            referralText: referralText,
+          };
+        })
+      );
+
+      const allPatients = [...ashaPatients, ...formatted];
+      setPatients(allPatients);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    loadPatients();
+  }, [user]);
+
   const highRiskPatients = useMemo(
     () => patients.filter((p) => p.riskLevel === "high"),
     [patients],
@@ -94,8 +169,26 @@ export function AshaDashboard({ ashaName }: AshaDashboardProps) {
   const highRiskCount = highRiskPatients.length;
   const newCount = patients.filter((p) => p.isNew).length;
 
-  const handleAddMother = (data: NewMotherFormData) => {
-    setPatients((prev) => [formToAshaPatient(data), ...prev]);
+  const handleAddMother = async (data: NewMotherFormData) => {
+    if (!user?.id) return;
+    setIsLinking(true);
+    try {
+      await linkPatient(user.id, data.email, data.name);
+      toast({
+        title: "Success",
+        description: "Patient linked successfully",
+      });
+      setAddDialogOpen(false);
+      loadPatients(); // Reload the list
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to link patient",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLinking(false);
+    }
   };
 
   return (
@@ -185,10 +278,10 @@ export function AshaDashboard({ ashaName }: AshaDashboardProps) {
       <div className="flex flex-wrap items-center gap-2">
         {(
           [
-            { id: "all" as const, label: "All" },
+            { id: "all" as const, label: "All", icon: Users },
             { id: "pregnant" as const, label: "Pregnant", icon: Users },
             { id: "highRisk" as const, label: "▲ High Risk", icon: AlertTriangle },
-            { id: "followUp" as const, label: "Follow-up" },
+            { id: "followUp" as const, label: "Follow-up", icon: AlertTriangle },
           ] as const
         ).map((tab) => (
           <Button
@@ -221,7 +314,7 @@ export function AshaDashboard({ ashaName }: AshaDashboardProps) {
                 className={cn(
                   "overflow-hidden transition-colors cursor-pointer hover:bg-muted/30",
                   patient.riskLevel === "high" &&
-                    "border-destructive bg-destructive/5",
+                  "border-destructive bg-destructive/5",
                 )}
                 onClick={() => navigate(`/patient/${patient.id}`, { state: { patient } })}
                 onKeyDown={(e) => {
@@ -356,6 +449,7 @@ export function AshaDashboard({ ashaName }: AshaDashboardProps) {
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         onSubmit={handleAddMother}
+        isLoading={isLinking}
       />
     </div>
   );

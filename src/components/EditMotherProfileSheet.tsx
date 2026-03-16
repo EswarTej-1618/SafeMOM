@@ -21,59 +21,60 @@ import {
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 interface EditMotherProfileSheetProps {
-  profile: MotherSignupProfile;
+  initialData: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaved: () => void;
+  onSave: (data: any) => Promise<void> | void;
 }
 
 export function EditMotherProfileSheet({
-  profile,
+  initialData,
   open,
   onOpenChange,
-  onSaved,
+  onSave,
 }: EditMotherProfileSheetProps) {
+  const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({
-    name: profile.name,
-    age: String(profile.age),
-    bloodGroup: profile.bloodGroup || "",
-    gestationWeek: String(profile.gestationWeek),
-    pregnancyNumber: String(profile.pregnancyNumber),
-    chronicConditions: profile.chronicConditions.slice(),
-    otherCondition: profile.otherCondition || "",
-    onMedication: profile.onMedication,
-    medicationNames: profile.medicationNames || "",
-    weightKg: profile.vitals?.weightKg != null ? String(profile.vitals.weightKg) : "",
-    bloodPressureSystolic: profile.vitals?.bloodPressureSystolic != null ? String(profile.vitals.bloodPressureSystolic) : "",
-    bloodPressureDiastolic: profile.vitals?.bloodPressureDiastolic != null ? String(profile.vitals.bloodPressureDiastolic) : "",
-    hemoglobin: profile.vitals?.hemoglobin != null ? String(profile.vitals.hemoglobin) : "",
-    bloodSugarMgDl: profile.vitals?.bloodSugarMgDl != null ? String(profile.vitals.bloodSugarMgDl) : "",
-    heartRateBpm: profile.vitals?.heartRateBpm != null ? String(profile.vitals.heartRateBpm) : "",
-    spo2Percent: profile.vitals?.spo2Percent != null ? String(profile.vitals.spo2Percent) : "",
+    name: initialData?.name || "",
+    age: initialData?.age ? String(initialData.age) : "",
+    bloodGroup: initialData?.bloodGroup || "",
+    gestationWeek: initialData?.gestationWeek ? String(initialData.gestationWeek) : "",
+    pregnancyNumber: initialData?.pregnancyNumber ? String(initialData.pregnancyNumber) : "1",
+    chronicConditions: (initialData?.chronicConditions || []).slice(),
+    otherCondition: initialData?.otherCondition || "",
+    onMedication: !!initialData?.onMedication,
+    medicationNames: initialData?.medicationNames || "",
+    weightKg: initialData?.vitals?.weightKg != null ? String(initialData.vitals.weightKg) : "",
+    bloodPressureSystolic: initialData?.vitals?.bloodPressureSystolic != null ? String(initialData.vitals.bloodPressureSystolic) : "",
+    bloodPressureDiastolic: initialData?.vitals?.bloodPressureDiastolic != null ? String(initialData.vitals.bloodPressureDiastolic) : "",
+    hemoglobin: initialData?.vitals?.hemoglobin != null ? String(initialData.vitals.hemoglobin) : "",
+    bloodSugarMgDl: initialData?.vitals?.bloodSugarMgDl != null ? String(initialData.vitals.bloodSugarMgDl) : "",
+    heartRateBpm: initialData?.vitals?.heartRateBpm != null ? String(initialData.vitals.heartRateBpm) : "",
+    spo2Percent: initialData?.vitals?.spo2Percent != null ? String(initialData.vitals.spo2Percent) : "",
   });
 
   useEffect(() => {
     if (open) {
       setForm({
-        name: profile.name,
-        age: String(profile.age),
-        bloodGroup: profile.bloodGroup || "",
-        gestationWeek: String(profile.gestationWeek),
-        pregnancyNumber: String(profile.pregnancyNumber),
-        chronicConditions: profile.chronicConditions.slice(),
-        otherCondition: profile.otherCondition || "",
-        onMedication: profile.onMedication,
-        medicationNames: profile.medicationNames || "",
-        weightKg: profile.vitals?.weightKg != null ? String(profile.vitals.weightKg) : "",
-        bloodPressureSystolic: profile.vitals?.bloodPressureSystolic != null ? String(profile.vitals.bloodPressureSystolic) : "",
-        bloodPressureDiastolic: profile.vitals?.bloodPressureDiastolic != null ? String(profile.vitals.bloodPressureDiastolic) : "",
-        hemoglobin: profile.vitals?.hemoglobin != null ? String(profile.vitals.hemoglobin) : "",
-        bloodSugarMgDl: profile.vitals?.bloodSugarMgDl != null ? String(profile.vitals.bloodSugarMgDl) : "",
-        heartRateBpm: profile.vitals?.heartRateBpm != null ? String(profile.vitals.heartRateBpm) : "",
-        spo2Percent: profile.vitals?.spo2Percent != null ? String(profile.vitals.spo2Percent) : "",
+        name: initialData?.name || "",
+        age: initialData?.age ? String(initialData.age) : "",
+        bloodGroup: initialData?.bloodGroup || "",
+        gestationWeek: initialData?.gestationWeek ? String(initialData.gestationWeek) : "",
+        pregnancyNumber: initialData?.pregnancyNumber ? String(initialData.pregnancyNumber) : "1",
+        chronicConditions: (initialData?.chronicConditions || []).slice(),
+        otherCondition: initialData?.otherCondition || "",
+        onMedication: !!initialData?.onMedication,
+        medicationNames: initialData?.medicationNames || "",
+        weightKg: initialData?.vitals?.weightKg != null ? String(initialData.vitals.weightKg) : "",
+        bloodPressureSystolic: initialData?.vitals?.bloodPressureSystolic != null ? String(initialData.vitals.bloodPressureSystolic) : "",
+        bloodPressureDiastolic: initialData?.vitals?.bloodPressureDiastolic != null ? String(initialData.vitals.bloodPressureDiastolic) : "",
+        hemoglobin: initialData?.vitals?.hemoglobin != null ? String(initialData.vitals.hemoglobin) : "",
+        bloodSugarMgDl: initialData?.vitals?.bloodSugarMgDl != null ? String(initialData.vitals.bloodSugarMgDl) : "",
+        heartRateBpm: initialData?.vitals?.heartRateBpm != null ? String(initialData.vitals.heartRateBpm) : "",
+        spo2Percent: initialData?.vitals?.spo2Percent != null ? String(initialData.vitals.spo2Percent) : "",
       });
     }
-  }, [open, profile]);
+  }, [open, initialData]);
 
   const toggleCondition = (label: string) => {
     setForm((p) => ({
@@ -84,7 +85,7 @@ export function EditMotherProfileSheet({
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const age = Number(form.age) || 0;
     const gestationWeek = Number(form.gestationWeek) || 0;
     const pregnancyNumber = Number(form.pregnancyNumber) || 1;
@@ -97,22 +98,29 @@ export function EditMotherProfileSheet({
     if (form.heartRateBpm.trim() !== "") vitals.heartRateBpm = Number(form.heartRateBpm);
     if (form.spo2Percent.trim() !== "") vitals.spo2Percent = Number(form.spo2Percent);
 
-    const updated: MotherSignupProfile = {
-      ...profile,
-      name: form.name.trim() || profile.name,
-      age: age || profile.age,
-      bloodGroup: form.bloodGroup || profile.bloodGroup,
-      gestationWeek: gestationWeek || profile.gestationWeek,
-      pregnancyNumber: pregnancyNumber || profile.pregnancyNumber,
+    const updated = {
+      ...initialData,
+      name: form.name.trim() || initialData?.name,
+      age: age || initialData?.age,
+      bloodGroup: form.bloodGroup || initialData?.bloodGroup,
+      gestationWeek: gestationWeek || initialData?.gestationWeek,
+      pregnancyNumber: pregnancyNumber || initialData?.pregnancyNumber,
       chronicConditions: form.chronicConditions,
       otherCondition: form.otherCondition.trim(),
       onMedication: form.onMedication,
       medicationNames: form.onMedication ? form.medicationNames.trim() : "",
       vitals: Object.keys(vitals).length > 0 ? vitals : undefined,
     };
-    saveMotherProfile(updated);
-    onSaved();
-    onOpenChange(false);
+
+    setIsSaving(true);
+    try {
+      await onSave(updated);
+      onOpenChange(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -132,7 +140,7 @@ export function EditMotherProfileSheet({
               </div>
               <div className="grid gap-2">
                 <Label>Email (read-only)</Label>
-                <Input value={profile.email} disabled className="bg-muted" />
+                <Input value={initialData?.email || ""} disabled className="bg-muted" />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="grid gap-1">
@@ -249,8 +257,10 @@ export function EditMotherProfileSheet({
           </div>
         </ScrollArea>
         <div className="p-4 border-t border-border flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave}>Save changes</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save changes"}
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

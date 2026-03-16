@@ -11,6 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { ashaPatients, type AshaPatient } from "@/data/patients";
+import { VitalsTrends } from "@/components/VitalsTrends";
+import { LiveLocationCard } from "@/components/LiveLocationCard";
 
 function getInitials(name: string) {
   return name
@@ -81,6 +83,16 @@ const PatientProfile = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Vitals Trends Graph */}
+          <div className="mt-8">
+            <VitalsTrends />
+          </div>
+
+          {/* Live Location for Emergency */}
+          <div className="mt-8 h-80">
+            <LiveLocationCard />
+          </div>
 
           {/* High-risk section: only when profile has high risk (ASHA) */}
           {isHighRisk && (

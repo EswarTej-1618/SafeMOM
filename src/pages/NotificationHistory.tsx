@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Navbar from "@/components/Navbar";
+import { getStoredToken } from "@/lib/api";
 
 interface Notification {
     id: string;
@@ -54,16 +55,23 @@ export default function NotificationHistory() {
             setLoading(true);
             setError(null);
 
-            const statsRes = await fetch(`${API_BASE}/api/notification-stats`);
+            const token = getStoredToken();
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+            const statsRes = await fetch(`${API_BASE}/api/notification-stats`, { headers });
             const statsData = await statsRes.json();
             if (statsData.ok) {
                 setStats(statsData.stats);
+            } else if (statsData.error) {
+                throw new Error(statsData.error);
             }
 
-            const historyRes = await fetch(`${API_BASE}/api/notification-history?limit=50`);
+            const historyRes = await fetch(`${API_BASE}/api/notification-history?limit=50`, { headers });
             const historyData = await historyRes.json();
             if (historyData.ok) {
                 setNotifications(historyData.notifications);
+            } else if (historyData.error) {
+                throw new Error(historyData.error);
             }
         } catch (err) {
             console.error("Error loading notification history:", err);

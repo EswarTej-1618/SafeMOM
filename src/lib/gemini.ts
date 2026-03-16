@@ -54,12 +54,14 @@ export interface VitalsInput {
   spo2: { value: number; unit: string; status: string; normalRange: string };
   bloodPressure: { value: number; unit: string; status: string; normalRange: string };
   glucose: { value: number; unit: string; status: string; normalRange: string };
+  temperature: { value: number; unit: string; status: string; normalRange: string };
+  steps?: { value: number; unit: string; status: string; normalRange: string };
   /** Optional symptom answers; include for more accurate results */
   symptoms?: VitalsSymptoms;
 }
 
 const SYSTEM_PROMPT = `You are SafeMOM AI, a maternal health assistant. Your role is to:
-1. Analyze vital signs (Heart Rate, Stress Level, SpO2, Blood Pressure, Glucose)
+1. Analyze vital signs (Heart Rate, Stress Level, SpO2, Blood Pressure, Glucose, Temperature) and optional activity levels (Steps)
 2. When symptom answers (tired, headache/fever, abdominal pain, swelling, blurred vision/dizziness) are provided, use them to improve risk assessment — more "Yes" answers or concerning combinations can raise risk level
 3. Classify overall risk as: **Risky**, **High**, **Moderate**, or **Normal**
 4. Provide brief, actionable health suggestions for pregnant women
@@ -82,7 +84,11 @@ Current vitals:
 - SpO2: ${vitals.spo2.value}${vitals.spo2.unit} (Normal: ${vitals.spo2.normalRange}) - Status: ${vitals.spo2.status}
 - Blood Pressure: ${vitals.bloodPressure.value} ${vitals.bloodPressure.unit} (Normal: ${vitals.bloodPressure.normalRange}) - Status: ${vitals.bloodPressure.status}
 - Glucose: ${vitals.glucose.value} ${vitals.glucose.unit} (Normal: ${vitals.glucose.normalRange}) - Status: ${vitals.glucose.status}
+- Temperature: ${vitals.temperature.value} ${vitals.temperature.unit} (Normal: ${vitals.temperature.normalRange}) - Status: ${vitals.temperature.status}
 `.trim();
+  if (vitals.steps) {
+    out += `\n- Steps: ${vitals.steps.value} ${vitals.steps.unit} (Target: ${vitals.steps.normalRange}) - Status: ${vitals.steps.status}`;
+  }
   if (vitals.symptoms) {
     const s = vitals.symptoms;
     out += `
@@ -98,7 +104,7 @@ Symptoms (Y/N):
 }
 
 export function formatMotherProfileForPrompt(profile: MotherSignupProfile): string {
-  const conditions = profile.chronicConditions.length
+  const conditions = profile.chronicConditions?.length
     ? profile.chronicConditions.join(", ")
     : "None";
   const other = profile.otherCondition ? `; Other: ${profile.otherCondition}` : "";
@@ -197,7 +203,8 @@ const CHAT_SYSTEM_PROMPT = `You are SafeMOM AI, a friendly maternal health assis
 - Be supportive, calm, and reassuring
 - Provide helpful information while emphasizing this is guidance only
 - Always recommend consulting healthcare providers for medical decisions
-- Keep responses concise and easy to understand`;
+- Keep responses concise and easy to understand
+- **CRITICAL**: If the user reports symptoms of a medical emergency (e.g. heavy bleeding, severe pain, decreased fetal movement, extremely high blood pressure), you MUST include the exact phrase "**HIGH RISK**" in your response to trigger our emergency alert system.`;
 
 export async function chatWithGemini(
   userMessage: string,
@@ -259,13 +266,49 @@ export async function chatWithGemini(
   throw new Error(parseGeminiError(lastError));
 }
 
-const REPORT_SYSTEM_PROMPT = `You are SafeMOM AI. Generate a clear, readable maternal health report using the provided mother profile and any vitals history. The report should:
-1. Summarize the mother's primary info (age, gestation, blood group, pregnancy number)
-2. List chronic conditions and medications
-3. Summarize any vitals history and risk trends
-4. Give a clear overall assessment and 3–5 actionable recommendations
-5. Be written in simple language; avoid jargon
-6. End with: "⚠️ This report is AI-generated and does not replace professional medical advice. Always consult your healthcare provider."`;
+const REPORT_SYSTEM_PROMPT = `You are SafeMOM AI. Generate a clear, readable maternal health report using the provided mother profile and any vitals history. You MUST strictly adhere to the following markdown format:
+
+**Maternal Health Report for [Mother's Name]**
+
+---
+
+### 1. Mother's Primary Information
+- **Name:** [Name]
+- **Age:** [Age] years
+- **Gestation:** [Gestation] weeks
+- **Blood Group:** [Blood Group]
+- **Pregnancy Number:** [Pregnancy Number text]
+
+### 2. Chronic Conditions and Medications
+- **Chronic Condition:** [List conditions or 'None']
+- **Medication:** [List medications or 'None']
+
+### 3. Vitals Summary and Risk Trends
+- **Weight:** [If available]
+- **Blood Pressure (BP):** [Summary and status]
+- **Hemoglobin:** [Summary and status]
+- **Blood Sugar:** [Summary and status]
+- **Heart Rate:** [Summary and status]
+- **Oxygen Saturation (SpO₂):** [Summary and status]
+
+**Recent Chat & Vitals History:**
+[List out all provided chat sessions or vitals history events here, including the date, a brief summary of the symptoms/vitals discussed, and the designated Risk Level (Normal, Low, Medium, High). For example:
+- **[Date]:** [Summary] - **Risk Level: [Level]**]
+
+[Sentence assessing current vitals overall]
+
+### 4. Overall Assessment and Recommendations
+
+**Overall Assessment:**
+[Provide a comprehensive overall assessment that evaluates *all* recorded vitals history to give a complete picture. Focus on highlighting any 'risky' or 'high' risk events from the last week when providing care suggestions.]
+
+**Actionable Recommendations:**
+1. **[Short Title]:** [Detailed recommendation based on assessment]
+2. [Generate 3-5 recommendations total in this numbered format]
+
+---
+
+⚠️ This report is AI-generated and does not replace professional medical advice. Always consult your healthcare provider.`;
 
 export async function generateMotherReport(
   profile: MotherSignupProfile,
@@ -282,13 +325,13 @@ export async function generateMotherReport(
   const historyText =
     vitalsHistory && vitalsHistory.length > 0
       ? "\n\nVitals history (most recent first):\n" +
-        vitalsHistory
-          .slice(0, 10)
-          .map(
-            (e) =>
-              `- ${e.timestamp}: ${e.vitalsSummary}${e.riskLevel ? ` | Risk: ${e.riskLevel}` : ""}`
-          )
-          .join("\n")
+      vitalsHistory
+        .slice(0, 50)
+        .map(
+          (e) =>
+            `- ${e.timestamp}: ${e.vitalsSummary}${e.riskLevel ? ` | Risk: ${e.riskLevel}` : ""}`
+        )
+        .join("\n")
       : "\n\nNo vitals history recorded yet.";
 
   const fullPrompt = `${profileText}${historyText}\n\nGenerate a final maternal health report based on the above.`;
@@ -304,7 +347,7 @@ export async function generateMotherReport(
         config: {
           systemInstruction: REPORT_SYSTEM_PROMPT,
           temperature: 0.5,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 8192,
         },
       });
 

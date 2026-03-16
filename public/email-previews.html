@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeMom - Email Template Previews</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f1f5f9;
+      color: #334155;
+      margin: 0;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+    .header {
+      max-width: 800px;
+      margin: 0 auto 40px;
+      text-align: center;
+    }
+    h1 {
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 60px;
+    }
+    .email-wrapper {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .email-label {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      font-weight: 700;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .subject {
+      color: #1e293b;
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>SafeMom Email Templates</h1>
+    <p>Preview of the automated emails sent to users.</p>
+  </div>
+
+  <div class="container">
+
+    <!-- 1. Signup / Verification -->
+    <div class="email-wrapper">
+      <div class="email-label">
+        <span>Template 1: Signup / Email Verification</span>
+        <span class="subject">Subject: SafeMom — Verify your email address</span>
+      </div>
+      <div>
+        <!-- START RAW EMAIL HTML -->
+        <div style="font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f7f9f4; border-radius: 16px;">
+          <h2 style="color: #7c3aed; font-weight: normal; margin-top: 20px;">Welcome to SafeMom! 💜</h2>
+          <p style="margin-top: 20px; line-height: 1.5; font-weight: bold; color: #111;">Thank you for signing up. Please verify your email<br/>address by clicking the button below:</p>
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="#" 
+               style="background: linear-gradient(135deg, #7c3aed, #db2777); color: white; padding: 14px 40px; 
+                      text-decoration: none; border-radius: 16px; font-weight: normal; font-size: 16px;
+                      display: inline-block;">
+              Verify Email Address
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px; margin-top: 30px;">
+            Or copy and paste this link in your browser:<br/>
+            <a href="#" style="color: #6d28d9; word-break: break-all; text-decoration: none;">http://localhost:5173/verify-email/xyz-token-123</a>
+          </p>
+          <p style="color: #999; font-size: 12px; margin-top: 20px; margin-bottom: 30px;">This link expires in 24 hours.</p>
+          <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 20px 0;" />
+          <p style="color: #999; font-size: 12px; font-style: italic; margin-bottom: 20px;">
+            This is an automated email from SafeMom. If you didn't<br/>create an account, please ignore this email.
+          </p>
+        </div>
+        <!-- END RAW EMAIL HTML -->
+      </div>
+    </div>
+
+
+    <!-- 2. Password Reset -->
+    <div class="email-wrapper">
+      <div class="email-label">
+        <span>Template 2: Forgot Password</span>
+        <span class="subject">Subject: SafeMom — Reset your password</span>
+      </div>
+      <div>
+        <!-- START RAW EMAIL HTML -->
+        <div style="font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #7c3aed; font-weight: normal;">Password Reset Request 🔒</h2>
+          <p>We received a request to reset your SafeMom password. Click the button below to set a new password:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="#" 
+               style="background: linear-gradient(135deg, #7c3aed, #db2777); color: white; padding: 14px 32px; 
+                      text-decoration: none; border-radius: 12px; font-weight: normal; font-size: 16px;
+                      display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            Or copy and paste this link in your browser:<br/>
+            <a href="#" style="color: #7c3aed;">http://localhost:5173/reset-password?token=xyz-123</a>
+          </p>
+          <p style="color: #999; font-size: 12px;">This link expires in 1 hour. If you didn't request this, please ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="color: #999; font-size: 12px; font-style: italic;">
+            This is an automated email from SafeMom.
+          </p>
+        </div>
+        <!-- END RAW EMAIL HTML -->
+      </div>
+    </div>
+
+
+    <!-- 3. Login Alert -->
+    <div class="email-wrapper">
+      <div class="email-label">
+        <span>Template 3: Login Success Alert</span>
+        <span class="subject">Subject: SafeMom — New Login to Your Account</span>
+      </div>
+      <div>
+        <!-- START RAW EMAIL HTML -->
+        <div style="font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f7f9f4; border-radius: 16px;">
+          <h2 style="color: #7c3aed; font-weight: normal; margin-top: 20px;">Hello Priya,</h2>
+          <p style="margin-top: 20px; line-height: 1.5; color: #111;">We're writing to let you know that a successful<br/>login to your SafeMom account occurred on<br/>October 28, 2026, 2:45 PM.</p>
+          <p style="margin-top: 20px; line-height: 1.5; color: #111;">If this was you, you can safely ignore this email.</p>
+          <p style="color: #dc2626; margin-top: 20px; line-height: 1.5;">If you did not log in recently, please reset your<br/>password immediately to secure your account.</p>
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="#" 
+               style="background: #f7f9f4; color: #dc2626; border: 1px solid #dc2626; padding: 12px 30px; 
+                      text-decoration: none; border-radius: 10px; font-size: 16px;
+                      display: inline-block;">
+              Secure My Account
+            </a>
+          </div>
+          <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 30px 0;" />
+          <p style="color: #999; font-size: 12px; font-style: italic; margin-bottom: 20px;">
+            This is an automated security alert from SafeMom.
+          </p>
+        </div>
+        <!-- END RAW EMAIL HTML -->
+      </div>
+    </div>
+
+
+    <!-- 4. Account Deletion -->
+    <div class="email-wrapper">
+      <div class="email-label">
+        <span>Template 4: Account Deletion</span>
+        <span class="subject">Subject: SafeMom — Your Account Has Been Deleted</span>
+      </div>
+      <div>
+        <!-- START RAW EMAIL HTML -->
+        <div style="font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f7f9f4; border-radius: 16px;">
+          <h2 style="color: #dc2626; font-weight: normal; margin-top: 20px;">Account Deleted 🗑️</h2>
+          <p style="margin-top: 20px; line-height: 1.5; color: #111;">Hello <strong>Priya</strong>,</p>
+          <p style="line-height: 1.5; color: #111;">
+            Your SafeMom account associated with <strong>priya@safemom.com</strong> was permanently deleted on <strong>October 28, 2026, 2:45 PM</strong>.
+          </p>
+          <p style="line-height: 1.5; color: #111;">
+            All your personal data, health records, and profile information have been permanently removed from our system.
+          </p>
+          <p style="color: #dc2626; margin-top: 20px; line-height: 1.5;">
+            If you did <strong>not</strong> request this deletion, please contact us immediately — someone may have accessed your account.
+          </p>
+          <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 30px 0;" />
+          <p style="color: #999; font-size: 12px; font-style: italic; margin-bottom: 20px;">
+            This is an automated notification from SafeMom. Thank you for using our service.
+          </p>
+        </div>
+        <!-- END RAW EMAIL HTML -->
+      </div>
+    </div>
+
+
+    <!-- 5. Contact Auto-Reply -->
+    <div class="email-wrapper">
+      <div class="email-label">
+        <span>Template 5: Contact Auto-Reply (To User)</span>
+        <span class="subject">Subject: SafeMom — We've received your message</span>
+      </div>
+      <div>
+        <!-- START RAW EMAIL HTML -->
+        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid #e5e7eb;">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); padding: 32px 40px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Message Received! 💜</h1>
+          </div>
+  
+          <!-- Content -->
+          <div style="padding: 40px;">
+            <h2 style="color: #0f172a; font-size: 20px; font-weight: 600; margin: 0 0 16px 0;">Hi Priya,</h2>
+            
+            <p style="color: #334155; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+              Thank you for reaching out to <strong>SafeMom</strong>! This is an automated message to let you know that we've received your inquiry and our support team is reviewing it.
+            </p>
+            
+            <p style="color: #334155; font-size: 16px; line-height: 1.6; margin: 0 0 32px 0;">
+              We aim to respond to all messages within 24 hours. If your inquiry is urgent and requires immediate medical attention, please do not wait for our email response.
+            </p>
+  
+            <!-- Urgent Contact Box -->
+            <div style="background-color: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 20px; text-align: center;">
+              <p style="color: #be123c; font-size: 14px; font-weight: 600; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">For Urgent Matters</p>
+              <p style="color: #e11d48; font-size: 18px; font-weight: 700; margin: 0;">Call us at: +91 1800-SAFEMOM</p>
+            </div>
+          </div>
+  
+          <!-- Footer -->
+          <div style="background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+            <p style="margin: 0; font-size: 13px; color: #94a3b8; line-height: 1.5;">
+              This is an automated reply. Please do not reply directly to this email.<br/>
+              &copy; 2026 SafeMom Healthcare Pvt. Ltd.
+            </p>
+          </div>
+        </div>
+        <!-- END RAW EMAIL HTML -->
+      </div>
+    </div>
+
+
+  </div>
+
+</body>
+</html>
