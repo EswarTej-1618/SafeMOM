@@ -85,11 +85,11 @@ function getTransporter() {
       auth: { user, pass },
     });
   }
-  // For Gmail, explicitly use port 587 with STARTTLS to avoid IPv6/SSL issues
+  // For Gmail, use port 465 with true TLS to avoid Render outbound blocks on port 587
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // Use STARTTLS
+    port: 465,
+    secure: true,
     auth: { user, pass },
     // Force IPv4 to avoid IPv6 connection issues
     family: 4,
