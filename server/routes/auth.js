@@ -189,16 +189,18 @@ router.post("/forgot-password", async (req, res) => {
             emailSent = await sendPasswordResetEmail(user.email, resetToken);
             if (emailSent === false) {
                 // SMTP not configured
+                const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
                 console.warn("[Auth] SMTP not configured — password reset email NOT sent to:", user.email);
                 console.warn("[Auth] ⚠️  Check SMTP_USER and SMTP_PASS in .env.local");
-                console.warn("[Auth] 🔗 DEBUG reset link: http://localhost:8080/reset-password?token=" + resetToken);
+                console.warn(`[Auth] 🔗 DEBUG reset link: ${frontendUrl}/reset-password?token=${resetToken}`);
             } else {
                 console.log("[Auth] Password reset email sent successfully to:", user.email);
             }
         } catch (emailErr) {
+            const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
             console.error("[Auth] ❌ SMTP error — failed to send reset email to:", user.email);
             console.error("[Auth] SMTP error details:", emailErr.message);
-            console.error("[Auth] 🔗 DEBUG reset link (use this manually): http://localhost:8080/reset-password?token=" + resetToken);
+            console.error(`[Auth] 🔗 DEBUG reset link (use this manually): ${frontendUrl}/reset-password?token=${resetToken}`);
         }
 
         res.json({
