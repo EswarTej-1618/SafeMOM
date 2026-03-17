@@ -3,24 +3,26 @@ const nodemailer = require("nodemailer");
 const { Resend } = require("resend");
 
 function getTransporter() {
-  const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey) {
-    const resend = new Resend(resendKey);
-    return {
-      verify: async () => true,
-      sendMail: async ({ from, to, subject, html, text }) => {
-        const result = await resend.emails.send({
-          from: "SafeMom <onboarding@resend.dev>",
-          to: Array.isArray(to) ? to : [to],
-          subject,
-          html,
-          text
-        });
-        if (result.error) throw new Error(result.error.message);
-        return result.data;
-      }
-    };
-  }
+  // --- TEMPORARILY DISABLED RESEND TO ALLOW SENDING TO ALL EMAILS ---
+  // const resendKey = process.env.RESEND_API_KEY;
+  // if (resendKey) {
+  //   const resend = new Resend(resendKey);
+  //   return {
+  //     verify: async () => true,
+  //     sendMail: async ({ from, to, subject, html, text }) => {
+  //       const result = await resend.emails.send({
+  //         from: "SafeMom <onboarding@resend.dev>",
+  //         to: Array.isArray(to) ? to : [to],
+  //         subject,
+  //         html,
+  //         text
+  //       });
+  //       if (result.error) throw new Error(result.error.message);
+  //       return result.data;
+  //     }
+  //   };
+  // }
+  // -------------------------------------------------------------------
 
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;

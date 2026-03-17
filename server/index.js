@@ -71,24 +71,26 @@ const RISK_ALERT_EMAIL = "safemom.support@gmail.com";
 const { Resend } = require("resend");
 
 function getTransporter() {
-  const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey) {
-    const resend = new Resend(resendKey);
-    return {
-      verify: async () => true,
-      sendMail: async ({ from, to, subject, html, text }) => {
-        const result = await resend.emails.send({
-          from: "SafeMom <onboarding@resend.dev>",
-          to: Array.isArray(to) ? to : [to],
-          subject,
-          html,
-          text
-        });
-        if (result.error) throw new Error(result.error.message);
-        return result.data;
-      }
-    };
-  }
+  // --- TEMPORARILY DISABLED RESEND TO ALLOW SENDING TO ALL EMAILS ---
+  // const resendKey = process.env.RESEND_API_KEY;
+  // if (resendKey) {
+  //   const resend = new Resend(resendKey);
+  //   return {
+  //     verify: async () => true,
+  //     sendMail: async ({ from, to, subject, html, text }) => {
+  //       const result = await resend.emails.send({
+  //         from: "SafeMom <onboarding@resend.dev>",
+  //         to: Array.isArray(to) ? to : [to],
+  //         subject,
+  //         html,
+  //         text
+  //       });
+  //       if (result.error) throw new Error(result.error.message);
+  //       return result.data;
+  //     }
+  //   };
+  // }
+  // -------------------------------------------------------------------
 
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
@@ -116,6 +118,8 @@ function getTransporter() {
     family: 4,
   });
 }
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 app.post("/api/send-risk-alert", async (req, res) => {
   const { riskLevel, summary, message, patientId } = req.body || {};
@@ -264,11 +268,19 @@ app.post("/api/send-risk-alert", async (req, res) => {
       .join("\n");
 
     const html = `
-      <h2>SafeMom – High risk identified</h2>
-      <p><strong>Risk level:</strong> ${riskLevel}</p>
-      ${summary ? `<p><strong>Vitals summary:</strong> ${summary}</p>` : ""}
-      ${emailMessage ? `<h3>AI assessment</h3><pre style="white-space:pre-wrap;">${escapeHtml(emailMessage)}</pre>` : ""}
-      <p><em>This is an automated alert from SafeMom. Please follow up with the mother/patient.</em></p>
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid #fee2e2;">
+        <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 32px 40px; text-align: center;">
+          <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">SafeMom – High risk identified</h2>
+        </div>
+        <div style="padding: 40px;">
+          <div style="background-color: #fef2f2; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #fecaca;">
+            <p style="margin: 0 0 12px 0; font-size: 16px; color: #991b1b;"><strong>Risk level:</strong> ${riskLevel}</p>
+            ${summary ? `<p style="margin: 0; font-size: 16px; color: #991b1b;"><strong>Vitals summary:</strong> ${summary}</p>` : ""}
+          </div>
+          ${emailMessage ? `<h3 style="font-size: 16px; color: #334155; font-weight: 600; margin: 0 0 12px 0;">AI assessment</h3><pre style="white-space:pre-wrap; background-color: #f8fafc; border-left: 4px solid #ef4444; padding: 20px 24px; color: #334155; font-size: 15px; line-height: 1.6; border-radius: 0 12px 12px 0;">${escapeHtml(emailMessage)}</pre>` : ""}
+          <p style="color: #64748b; font-size: 14px; margin-top: 32px; font-style: italic;"><em>This is an automated alert from SafeMom. Please follow up with the mother/patient.</em></p>
+        </div>
+      </div>
     `.trim();
 
     try {
@@ -308,6 +320,9 @@ app.post("/api/send-risk-alert", async (req, res) => {
         error: err.message || 'Unknown error'
       });
     }
+
+    // Add a small delay between emails to avoid rate limits
+    await delay(200);
   }
 
   if (successCount > 0) {

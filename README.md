@@ -1,196 +1,375 @@
 <div align="center">
   <img src="https://i.ibb.co/6y4GbsT/SafeMOM-Logo.png" alt="SafeMOM Logo" width="200" style="border-radius:20px;"/>
   <h1>SafeMOM 🤰💙</h1>
-  <p><strong>The Advanced Maternity Care & Monitoring Platform</strong></p>
-  <p>Empowering mothers, equipping doctors, engaging partners, and supporting ASHA workers with real-time AI-driven health tracking.</p>
+  <p><strong>SAFE MATERNAL ONGOING MONITORING BAND</strong></p>
+  <p>AI-Driven IoT-Based Maternal Health Monitoring and Preventive Care Platform</p>
+  <p><em>Empowering mothers, equipping doctors, engaging partners, and supporting ASHA workers with real-time AI-driven health tracking.</em></p>
+
+  ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
+  ![React](https://img.shields.io/badge/React_18-61DAFB?style=flat&logo=react&logoColor=black)
+  ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+  ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
+  ![ESP32](https://img.shields.io/badge/ESP32-IoT-red?style=flat)
+  ![Gemini AI](https://img.shields.io/badge/Google_Gemini-AI-blue?style=flat&logo=google&logoColor=white)
 </div>
 
 <hr />
 
 ## 📖 Table of Contents
+
 1. [Project Overview](#-project-overview)
-2. [Core Features](#-core-features)
-3. [User Roles & Dashboards](#-user-roles--dashboards)
-4. [Technical Architecture](#%EF%B8%8F-technical-architecture)
-5. [Key Components (Frontend)](#%E2%9C%A8-key-components-frontend)
-6. [Backend API & Database](#%EF%B8%8F-backend-api--database)
-7. [Installation & Setup](#-installation--setup)
-8. [Environment Variables](#-environment-variables)
-9. [Future Roadmap](#-future-roadmap)
+2. [Problem Statement](#-problem-statement)
+3. [Objectives](#-objectives)
+4. [System Architecture](#%EF%B8%8F-system-architecture)
+5. [Hardware Components](#-hardware-components)
+6. [Software Architecture](#-software-architecture)
+7. [User Roles & Dashboards](#-user-roles--dashboards)
+8. [Key Components (Frontend)](#-key-components-frontend)
+9. [Backend API & Database](#%EF%B8%8F-backend-api--database)
+10. [System Workflow](#-system-workflow)
+11. [Installation & Setup](#-installation--setup)
+12. [Environment Variables](#-environment-variables)
+13. [Future Roadmap](#-future-roadmap)
 
 ---
 
 ## 🌟 Project Overview
-**SafeMOM** is a comprehensive, multi-tenant web application designed to track, analyze, and manage maternal health during pregnancy. By bridging the communication gap between expectant mothers, their partners, doctors, and ASHA (Accredited Social Health Activist) workers, SafeMOM ensures that critical health data is monitored in real-time.
 
-At the heart of the platform is an **AI-powered Chatbot** (powered by Google Gemini) that interacts with mothers, assesses risks from their symptoms, and automatically escalates high-risk cases to healthcare providers. The platform also boasts real-time vital tracking (Heart Rate, Blood Pressure, SpO2), pregnancy timeline planning, and live location mapping for emergency situations.
+**SafeMOM** (Safe Maternal Ongoing Monitoring Band) is a comprehensive, AI-driven IoT-based maternal healthcare monitoring and preventive care platform. It continuously monitors critical maternal physiological parameters — heart rate, HRV, SpO₂, stress levels, body temperature, step count, and GPS location — using wearable biomedical sensors connected to an ESP32 microcontroller.
+
+At the heart of the platform is an **AI-powered Chatbot** (powered by Google Gemini) that interacts with mothers, assesses risks from their symptoms, and automatically escalates high-risk cases to healthcare providers. The platform also provides a **real-time monitoring dashboard**, **machine learning-based blood pressure prediction**, **automated risk alerts via email**, and **live location mapping** for emergency situations.
+
+SafeMOM directly supports **United Nations Sustainable Development Goal 3** (Good Health and Well-being), particularly **Target 3.1**, which focuses on reducing maternal mortality and improving maternal healthcare accessibility.
 
 ---
 
-## 🚀 Core Features
+## 🚩 Problem Statement
 
-- **🤖 AI Risk Assessment Bot:** An intelligent chatbot that mothers can converse with to report symptoms. It uses Natural Language Processing to categorize patient risk (Low, Medium, High).
-- **💓 Real-Time Vitals Tracking:** Interactive, visually stunning charts displaying Heart Rate, Blood Pressure, SpO2, Daily Steps, and HRV trends over the gestation period.
-- **🚨 Automated Alerts & Escalations:** If the AI detects a high-risk symptom (e.g., preeclampsia, heavy bleeding), immediate notifications are triggered for linked doctors and ASHA workers.
-- **🧑‍🤝‍🧑 Multi-Role Ecosystem:** Dedicated, customized interfaces and access levels for Mothers, Doctors, Partners, and ASHA Workers.
-- **🗺️ Nearby Hospital & Live Location:** Integrated Leaflet maps to locate the mother in real-time and find the nearest maternity hospitals in case of an emergency.
-- **📅 Interactive Pregnancy Calendar:** A visually rich, month-by-month calendar highlighting the 40-week gestation period.
-- **🔗 Account Linking System:** Secure invitation/linking system to bind a Mother's account to her Doctor, her Partner, and her ASHA worker so they can monitor her profile simultaneously.
-- **🎨 Premium UI/UX:** Built with Tailwind CSS, Framer Motion, and shadcn/ui. Features a modern dark aesthetic with glowing orbs, frosted glass components (glassmorphism), and dynamic micro-animations.
+Maternal mortality remains a critical public health challenge in rural India, where nearly **65–70%** of maternal deaths occur due to delayed detection of life-threatening pregnancy complications. Over **70%** of these deaths are preventable with timely monitoring and early medical intervention.
+
+Key challenges include:
+- Limited healthcare infrastructure in rural regions
+- Unstable internet connectivity
+- Shortage of medical professionals
+- Delayed emergency response
+
+SafeMOM bridges this gap by enabling **continuous monitoring, early risk detection, and timely healthcare intervention** through wearable IoT sensors, intelligent data analysis, and automated alert systems.
+
+---
+
+## 🎯 Objectives
+
+- Develop a **wearable maternal healthcare monitoring device** for continuous tracking of vital signs
+- Monitor physiological parameters: Heart Rate, HRV, SpO₂, Stress, Temperature, Step Count, Location
+- Integrate biomedical sensors (MAX30102, GSR, DS18B20, GPS, MPU6050) with the **ESP32 microcontroller**
+- Enable **real-time IoT data transmission** to a cloud server
+- Implement a **machine learning model** for non-invasive blood pressure prediction using PPG signals
+- Develop an **AI-powered chatbot** for symptom analysis and healthcare guidance
+- Design a **risk assessment engine** (Low / Medium / High / Risky)
+- Build a **web-based monitoring dashboard** for doctors, ASHA workers, and family members
+- Implement **automated email alerts** for high-risk situations
+- Enable **GPS-based emergency location tracking** and nearby hospital identification
+- Support **preventive maternal healthcare** through early detection of pregnancy-related complications
+
+---
+
+## 🏗️ System Architecture
+
+The SafeMOM architecture is organized into **three major layers**:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      APPLICATION LAYER                              │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────┐ ┌───────────────┐  │
+│  │   SafeMOM    │ │   Doctor     │ │  ASHA    │ │   Partner     │  │
+│  │  Dashboard   │ │  Interface   │ │ Worker   │ │  Monitoring   │  │
+│  └──────────────┘ └──────────────┘ └──────────┘ └───────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │              Alert & Notification System                     │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────────────────────┤
+│                      PROCESSING LAYER                               │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────────┐   │
+│  │  Backend    │ │  MongoDB   │ │    ML      │ │  AI Chatbot    │   │
+│  │  Server     │ │  Database  │ │  Module    │ │   Engine       │   │
+│  │ (Node.js)  │ │            │ │  (BP Est.) │ │  (Gemini)      │   │
+│  └────────────┘ └────────────┘ └────────────┘ └────────────────┘   │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                  Risk Assessment Engine                      │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────────────────────┤
+│                       SENSING LAYER                                 │
+│  ┌──────────┐ ┌──────┐ ┌──────────┐ ┌──────┐ ┌─────────┐          │
+│  │ MAX30102 │ │ GSR  │ │ DS18B20  │ │ GPS  │ │ MPU6050 │          │
+│  │ (PPG)    │ │Sensor│ │ (Temp)   │ │Module│ │ (Accel) │          │
+│  └────┬─────┘ └──┬───┘ └────┬─────┘ └──┬───┘ └────┬────┘          │
+│       └──────────┴──────────┴───────────┴──────────┘               │
+│                    ┌──────────────┐                                  │
+│                    │    ESP32     │ ──── Wi-Fi ──→ Cloud Server      │
+│                    └──────────────┘                                  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Sensing Layer
+Wearable biomedical sensors connected to the **ESP32 microcontroller** that continuously collect physiological signals and transmit data via Wi-Fi.
+
+### Processing Layer
+Cloud-based backend (Node.js + Express.js) that receives sensor data, runs ML prediction models, processes AI chatbot interactions, and performs risk assessment.
+
+### Application Layer
+Web dashboard and notification interfaces for doctors, ASHA workers, partners, and mothers — with automated email alerts for critical situations.
+
+---
+
+## 🔧 Hardware Components
+
+| S.No | Sensor Module | Purpose | Approx. Cost (INR) |
+|------|--------------|---------|---------------------|
+| 1 | **MAX30102** PPG Sensor | Heart Rate, HRV, SpO₂ | ₹149 |
+| 2 | **DS18B20** Temperature Sensor | Body Temperature | ₹70 |
+| 3 | **MPU6050** Accelerometer & Gyroscope | Step Count & Activity Tracking | ₹173 |
+| 4 | **NEO-6M** GPS Module | Real-time Location Tracking | ₹400 |
+| 5 | **GSR** Sensor | Stress Level (Skin Conductance) | ₹1,525 |
+| 6 | **ESP32** Dev Kit | Central Microcontroller & Wi-Fi | ₹379 |
+
+> *Prices are approximate and referenced from the RobuCraze online electronics store.*
+
+---
+
+## 💻 Software Architecture
+
+### Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | React 18, TypeScript, Vite | Responsive web dashboard |
+| **Styling** | Tailwind CSS, shadcn/ui, Framer Motion | Premium UI with glassmorphism & animations |
+| **Charts** | Recharts | Interactive vital trend visualization |
+| **Maps** | Leaflet & React-Leaflet | Hospital locator & live location |
+| **Backend** | Node.js, Express.js | REST API server |
+| **Database** | MongoDB, Mongoose | NoSQL document storage |
+| **AI/NLP** | Google Gemini SDK | Symptom chatbot & risk analysis |
+| **ML Model** | Regression-based BP Prediction | Non-invasive blood pressure estimation |
+| **Auth** | JWT, bcrypt | Secure stateless authentication |
+| **Email** | Resend / Nodemailer | Risk alert notifications |
+| **Real-time** | Socket.io | WebSocket push notifications |
+| **IoT Device** | ESP32 (Arduino/C++) | Sensor data acquisition & Wi-Fi transmission |
+| **Communication** | REST API (HTTP/JSON) | ESP32 ↔ Cloud data exchange |
+
+### Frontend Web Dashboard
+- Real-time visualization of physiological parameters (HR, SpO₂, HRV, Temperature, Stress)
+- Interactive graphs and historical health trends
+- ML-predicted blood pressure values and risk-level indicators
+- AI-powered chatbot interface for pregnant women
+
+### Backend Application Server
+- **RESTful APIs** receive continuous sensor data from the ESP32 over Wi-Fi
+- **Risk Assessment Logic** evaluates vitals and AI symptom assessments against clinical thresholds
+- **Alert Orchestration** dispatches automatic risk reports and email alerts
+
+### Database System (MongoDB)
+- **Patient Profiles & Health Records** — demographics, medical history, linked providers
+- **Telemetry Data Logs** — time-series physiological data from wearable sensors
+- **Interaction Records** — AI chatbot conversation histories for risk trend analysis
+
+### Machine Learning & AI Engines
+- **Blood Pressure Prediction Model** — regression-based algorithm using PPG features (pulse amplitude, pulse width, HR, HRV, GSR)
+- **NLP Chatbot Engine** — Google Gemini-powered natural language processing for symptom evaluation and healthcare guidance
 
 ---
 
 ## 👥 User Roles & Dashboards
 
-SafeMOM supports four distinct user roles, each with a specialized dashboard:
+SafeMOM supports **four distinct user roles**, each with a specialized interface:
 
 ### 1. 🤰 Mother (Patient)
-- **Primary Dashboard:** Allows the mother to log vitals, chat with the AI Bot to report symptoms, and view her real-time risk status.
-- **Insights:** Views customized pregnancy journey timelines, historical vital trends, and educational/health tips.
-- **Profile:** Manages medical history (blood group, chronic conditions, pregnancy count).
+- Log vitals and chat with the AI Bot to report symptoms
+- View real-time risk status, pregnancy journey timeline, and health tips
+- Manage medical history (blood group, chronic conditions, pregnancy count)
 
 ### 2. 🩺 Doctor (Clinician)
-- **My Patients List:** A triage-focused dashboard displaying all linked patients, **sorted automatically by AI risk priority (High → Medium → Low)**. Includes dynamic summary cards with glow effects.
-- **Patient Details View:** Deep-dive into a specific mother's profile. Views full chat history, vital charts, profile views, and can set/update the official pregnancy start date.
-- **Actionable Controls:** Can schedule appointments, unlink patients, and review AI risk justifications.
+- **My Patients List** — triage dashboard sorted by AI risk priority (High → Medium → Low)
+- **Patient Details View** — full chat history, vital charts, profile data, and pregnancy start date management
+- Schedule appointments, unlink patients, and review AI risk justifications
 
 ### 3. 🤝 ASHA Worker (Community Health Worker)
-- Similar to the Doctor's view but tailored for community outreach.
-- Designed to help ASHA workers track multiple mothers in their locale, ensuring rural and community-level maternal care is never missed.
+- Similar to the Doctor's view but tailored for community outreach
+- Track multiple mothers in rural areas and assist doctors in risk identification
 
 ### 4. ❤️ Partner (Husband)
-- **Monitoring Dashboard:** Read-only access to their spouse's vitals, pregnancy timeline, and appointments.
-- **Peace of Mind:** Real-time visibility into the mother's risk status without overwhelming them with clinical configuration options.
-
----
-
-## 🛠️ Technical Architecture
-
-### Frontend Stack (Client)
-- **React 18** (Vite bundler) for fast, optimized rendering.
-- **TypeScript** for strict type safety and structured interfaces.
-- **Tailwind CSS + shadcn/ui** for rapid, accessible, and stunning component design.
-- **Framer Motion** for fluid page transitions and component animations.
-- **Recharts** for interactive vital trend data visualization.
-- **React Router Dom** for client-side routing and protected routes.
-- **Leaflet & React-Leaflet** for interactive mapping functionality.
-- **Socket.io-client** for real-time WebSocket communication (Push Notifications).
-
-### Backend Stack (Server)
-- **Node.js & Express.js** providing a robust REST API infrastructure.
-- **MongoDB & Mongoose** as the NoSQL database for flexible document storage (Users, Chat History, View Logs).
-- **Google Generative AI (Gemini SDK)** for backend AI symptom analysis.
-- **JSON Web Tokens (JWT) & bcrypt** for secure, stateless authentication and password hashing.
-- **Nodemailer** for email verification flows.
+- Read-only access to spouse's vitals, pregnancy timeline, and appointments
+- Real-time visibility into the mother's risk status
 
 ---
 
 ## ✨ Key Components (Frontend)
 
-*   `MotherDashboard.tsx`: The crux of the mother's experience, housing the AI Chat interface, live vitals, and emergency map.
-*   `DoctorPatientList.tsx`: The triage center for doctors, featuring risk-based sorting, robust filtering, unlinking capabilities, and a SafeMOM signature glowing aesthetic.
-*   `PatientDetails.tsx`: The detailed analytical view for clinicians, featuring `VitalsTrends.tsx` charts, `MaternalReportDisplay.tsx`, and `PregnancyCalendar.tsx`.
-*   `AIChatbot.tsx`: The interface talking to the `/api/chat` backend, intelligently parsing user symptoms and returning medical guidelines.
-*   `LiveVitals.tsx / VitalsTrends.tsx`: Dynamic charts mapping mock or real-time data against the gestation weeks.
+| Component | Description |
+|-----------|-------------|
+| `MotherDashboard.tsx` | Mother's primary experience — AI Chat, live vitals, emergency map |
+| `DoctorPatientList.tsx` | Triage center with risk-based sorting, filtering, and patient management |
+| `PatientDetails.tsx` | Clinician's analytical view with `VitalsTrends.tsx`, `MaternalReportDisplay.tsx`, `PregnancyCalendar.tsx` |
+| `AIChatbot.tsx` | AI symptom analysis interface connected to `/api/chat` backend |
+| `LiveVitals.tsx` / `VitalsTrends.tsx` | Dynamic charts mapping real-time sensor data against gestation weeks |
+| `ContactSection.tsx` | Emergency contact and hospital locator |
+| `HospitalMapIcon.tsx` | Leaflet map markers for nearby hospitals |
 
 ---
 
 ## ⚙️ Backend API & Database
 
-The backend follows an MVC-like structure located in the `/server` directory:
+The backend follows an MVC-like structure in the `/server` directory:
 
 ### Models (Mongoose)
-- `User.js`: Schema for all roles (Mother, Doctor, ASHA, Partner). Handles distinct fields conditionally (e.g., `gestationWeek`, `appointments`).
-- `PatientLink.js`: Relational linking between Clinicians (Doctor/ASHA) and Mothers.
-- `PartnerLink.js`: Relational linking between Partners and Mothers.
-- `ChatHistory.js`: Stores AI interactions linked to a specific mother.
-- `ProfileView.js`: Audit log capturing when a doctor or partner views a mother's profile.
+
+| Model | Description |
+|-------|-------------|
+| `User.js` | Schema for all roles (Mother, Doctor, ASHA, Partner) with role-specific fields |
+| `PatientLink.js` | Relational linking between Clinicians (Doctor/ASHA) and Mothers |
+| `PartnerLink.js` | Relational linking between Partners and Mothers |
+| `ChatHistory.js` | AI interaction records linked to a specific mother |
+| `ProfileView.js` | Audit log for profile access tracking |
 
 ### Routes (Express)
-- `/api/auth/*`: Registration, Login, Email Verification, Password Reset.
-- `/api/patient/*`: Patient linking, unlinking, profile view tracking, and updating pregnancy data.
-- `/api/partner/*`: Partner linking and data fetching.
-- `/api/chat/*`: AI bot messaging, analyzing symptoms, extracting risk levels, and saving history.
+
+| Route | Purpose |
+|-------|---------|
+| `/api/auth/*` | Registration, Login, Email Verification, Password Reset |
+| `/api/patient/*` | Patient linking/unlinking, profile view tracking, pregnancy data updates |
+| `/api/partner/*` | Partner linking and data fetching |
+| `/api/chat/*` | AI bot messaging, symptom analysis, risk extraction, and history saving |
 
 ---
 
-## 💻 Installation & Setup
+## 🔄 System Workflow
+
+```
+ ┌───────────────────┐
+ │  Wearable Sensors  │  MAX30102 · GSR · DS18B20 · GPS · MPU6050
+ └────────┬──────────┘
+          ▼
+ ┌───────────────────┐
+ │  ESP32 Processing  │  Signal filtering, noise removal, digitization
+ └────────┬──────────┘
+          ▼  (Wi-Fi / REST API)
+ ┌───────────────────┐
+ │   Cloud Backend    │  Node.js + Express.js + MongoDB
+ └────────┬──────────┘
+          ├──────────────────────┐
+          ▼                      ▼
+ ┌─────────────────┐   ┌──────────────────┐
+ │  ML BP Prediction│   │  AI Chatbot       │
+ │  (PPG Features)  │   │  (Gemini NLP)     │
+ └────────┬────────┘   └────────┬─────────┘
+          └──────────┬──────────┘
+                     ▼
+          ┌──────────────────┐
+          │ Risk Assessment   │  Low · Medium · High · Risky
+          │     Engine        │
+          └────────┬─────────┘
+                   ▼
+     ┌─────────────┴─────────────┐
+     ▼                           ▼
+┌──────────────┐       ┌──────────────────┐
+│  Dashboard    │       │  Email Alerts     │
+│ (Real-time)   │       │ (Doctor, ASHA,    │
+│               │       │  Partner)         │
+└──────────────┘       └──────────────────┘
+```
+
+---
+
+## 🚀 Installation & Setup
 
 ### Prerequisites
-- Node.js (v18+ recommended)
-- MongoDB instance (Local or Atlas URI)
-- Google Gemini API Key
+- **Node.js** v18+ recommended
+- **MongoDB** instance (Local or Atlas URI)
+- **Google Gemini API Key** — [Get it here](https://aistudio.google.com/apikey)
 
-### 1. Clone & Install Dependencies
-First, install the client-side dependencies:
+### 1. Clone & Install Frontend Dependencies
 ```bash
 git clone <repository-url>
 cd SafeMom
 npm install
 ```
 
-### 2. Setup the Server Environment
-Navigate to the server folder and install dependencies:
+### 2. Install Server Dependencies
 ```bash
 cd server
 npm install
 ```
 
-### 3. Start the Development Servers
-Create a split terminal or run these in two different windows:
+### 3. Start Development Servers
 
-**Terminal 1 (Backend API):**
+**Terminal 1 — Backend API:**
 ```bash
 cd server
 npm start
 ```
-*Note: Ensure your MongoDB is running locally or your Atlas URI is verified.*
 
-**Terminal 2 (Frontend React App):**
+**Terminal 2 — Frontend React App:**
 ```bash
 # From the project root
 npm run dev
 ```
 
-Visit `http://localhost:5173` in your browser.
+Visit **http://localhost:5173** in your browser.
+
+> **Quick Start (Windows):** You can also run `start.bat` from the project root to launch both servers simultaneously.
 
 ---
 
 ## 🔐 Environment Variables
 
-You must set up environment variables for both the Client and Server.
-
 ### Server (`server/.env`)
-Create a `.env` file in the `/server` directory:
+
 ```env
 PORT=5000
-MONGODB_URI=mongodb://127.0.0.1:27017/safemom
-JWT_SECRET=your_super_secret_jwt_key
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/safemom
+JWT_SECRET=your_jwt_secret_here
 GOOGLE_GEMINI_API_KEY=your_gemini_api_key_here
 FRONTEND_URL=http://localhost:5173
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
+
+# Email Alerts (Option A: Gmail with App Password)
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
+
+# Email Alerts (Option B: Other SMTP providers)
+# SMTP_HOST=smtp-mail.outlook.com
+# SMTP_PORT=587
+# SMTP_SECURE=false
 ```
 
 ### Client (`.env.local`)
-Create a `.env.local` file in the root directory:
+
 ```env
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
 VITE_API_URL=http://localhost:5000/api
-# If integrating maps API keys later, place them here.
 ```
+
+> See `.env.example` for a complete reference.
 
 ---
 
 ## 🔭 Future Roadmap
-- **Wearable Device Integration:** Connect with smartwatches (Apple Watch, Fitbit, custom IoT rings) to pipe actual HR and SpO2 data directly into the `LiveVitalsSection`.
-- **Telemedicine Call Integration:** Implement WebRTC allowing Doctors to launch a secure video call immediately directly from the `PatientDetails` page if risk is High.
-- **Multilingual Support:** Localize the AI Chatbot and UI to support rural languages via the ASHA worker interfaces.
-- **Offline Mode:** PWA capabilities for ASHA workers in remote villages to log patient data offline and sync when an internet connection is established.
+
+- **ABHA Health ID Integration** — Securely store and access maternal health records across healthcare systems via Ayushman Bharat
+- **Government Healthcare Collaboration** — Deploy SafeMOM with ASHA workers in rural healthcare programs
+- **Smartwatch & Wearable Integration** — Connect with commercial wearables (Apple Watch, Fitbit, custom IoT rings)
+- **Telemedicine Support** — WebRTC-based secure video consultations directly from the dashboard
+- **Multilingual AI Chatbot** — Support regional languages for improved rural accessibility
+- **Offline Data Synchronization** — PWA capabilities for offline data logging and auto-sync
+- **Advanced Predictive Analytics** — Additional ML models to detect preeclampsia, anemia, and gestational diabetes at early stages
+
+---
+
+## 🏆 Contribution to SDGs
+
+SafeMOM directly contributes to **United Nations Sustainable Development Goal 3** (Good Health and Well-being), particularly **Target 3.1**, which focuses on reducing the global maternal mortality ratio. By leveraging IoT, AI, and data-driven healthcare analytics, the platform improves maternal healthcare accessibility and safety in underserved regions.
 
 ---
 
 <p align="center">
-  Made with ❤️ for Maternal Healthcare.
+  Made with ❤️ for Maternal Healthcare by <strong>Team Phoenix</strong><br/>
+  Department of Electronics and Communication Engineering (ECE)
 </p>
