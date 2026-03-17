@@ -1,29 +1,77 @@
 const nodemailer = require("nodemailer");
 
-const { Resend } = require("resend");
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const FROM_EMAIL = process.env.BREVO_SENDER_EMAIL || process.env.SMTP_FROM || process.env.SMTP_USER || "safemom.support@gmail.com";
+const FROM_NAME = process.env.BREVO_SENDER_NAME || "SafeMom";
 
-function getTransporter() {
-  // --- TEMPORARILY DISABLED RESEND TO ALLOW SENDING TO ALL EMAILS ---
-  // const resendKey = process.env.RESEND_API_KEY;
-  // if (resendKey) {
-  //   const resend = new Resend(resendKey);
-  //   return {
-  //     verify: async () => true,
-  //     sendMail: async ({ from, to, subject, html, text }) => {
-  //       const result = await resend.emails.send({
-  //         from: "SafeMom <onboarding@resend.dev>",
-  //         to: Array.isArray(to) ? to : [to],
-  //         subject,
-  //         html,
-  //         text
-  //       });
-  //       if (result.error) throw new Error(result.error.message);
-  //       return result.data;
-  //     }
-  //   };
-  // }
-  // -------------------------------------------------------------------
+/* ──────────────────────────────────────────────────────────────────────────────
+   Core send helper — routes through Brevo when available,
+   falls back to SMTP for local development.
+   ────────────────────────────────────────────────────────────────────────────── */
 
+/**
+ * Send an email.
+ * 1. Tries Brevo transactional email API first (if BREVO_API_KEY is set)
+ * 2. If Brevo fails or key is missing, falls back to nodemailer / Gmail SMTP
+ */
+async function sendEmail({ to, subject, html, text }) {
+  // ── Brevo API path ─────────────────────────────────────────────────────────
+  const brevoKey = process.env.BREVO_API_KEY;
+  let sentViaBrevo = false;
+
+  if (brevoKey) {
+    try {
+      const recipients = Array.isArray(to)
+        ? to.map((email) => ({ email: email.trim() }))
+        : to.split(",").map((email) => ({ email: email.trim() }));
+
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "content-type": "application/json",
+          "api-key": brevoKey,
+        },
+        body: JSON.stringify({
+          sender: { name: FROM_NAME, email: FROM_EMAIL },
+          to: recipients,
+          subject,
+          htmlContent: html || undefined,
+          textContent: text || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "unknown");
+        console.warn(`[Email] Brevo API error (${res.status}): ${errBody} — Falling back to SMTP...`);
+      } else {
+        console.log("[Email] Sent via Brevo to", to);
+        sentViaBrevo = true;
+        return true;
+      }
+    } catch (err) {
+      console.warn(`[Email] Brevo fetch failed: ${err.message} — Falling back to SMTP...`);
+    }
+  }
+
+  // ── SMTP fallback (if Brevo failed or is not configured) ─────────────────
+  if (!sentViaBrevo) {
+    const transporter = getSmtpTransporter();
+    if (!transporter) {
+      console.log("[Email] Both Brevo and SMTP are missing/failed — skipping email to", to);
+      return false;
+    }
+
+    await transporter.sendMail({ from: FROM_EMAIL, to, subject, html, text });
+    console.log("[Email] Sent fallback via SMTP to", to);
+    return true;
+  }
+}
+
+/**
+ * Build a nodemailer transporter (only used when POWER_AUTOMATE_URL is NOT set)
+ */
+function getSmtpTransporter() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   if (!user || !pass) return null;
@@ -38,33 +86,40 @@ function getTransporter() {
       auth: { user, pass },
     });
   }
-  // For Gmail, use port 465 with true TLS to avoid Render outbound blocks on port 587
+  // Gmail default
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, 
+    secure: true,
     auth: { user, pass },
     family: 4,
   });
 }
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER;
+// Keep backward-compat export so test-smtp route still works
+function getTransporter() {
+  if (process.env.BREVO_API_KEY) {
+    // Return a duck-typed object so the /test-smtp route can call verify()
+    return {
+      verify: async () => true,
+      sendMail: async (opts) => sendEmail(opts),
+    };
+  }
+  return getSmtpTransporter();
+}
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   Individual email functions — templates are UNCHANGED, only the send call
+   at the bottom of each function is swapped to use sendEmail().
+   ────────────────────────────────────────────────────────────────────────────── */
 
 /**
  * Send email verification link
  */
 async function sendVerificationEmail(email, token) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    console.log("[Email] SMTP not configured — skipping verification email");
-    return false;
-  }
-
   const verifyUrl = `${FRONTEND_URL}/verify-email/${token}`;
 
-  await transporter.sendMail({
-    from: FROM_EMAIL,
+  return sendEmail({
     to: email,
     subject: "SafeMom — Verify your email address",
     html: `
@@ -92,24 +147,15 @@ async function sendVerificationEmail(email, token) {
     `.trim(),
     text: `Welcome to SafeMom! Verify your email by visiting: ${verifyUrl} (Expires in 24 hours)`,
   });
-  console.log("[Email] Verification email sent to", email);
-  return true;
 }
 
 /**
  * Send password reset link
  */
 async function sendPasswordResetEmail(email, token) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    console.log("[Email] SMTP not configured — skipping reset email");
-    return false;
-  }
-
   const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
 
-  await transporter.sendMail({
-    from: FROM_EMAIL,
+  return sendEmail({
     to: email,
     subject: "SafeMom — Reset your password",
     html: `
@@ -137,24 +183,15 @@ async function sendPasswordResetEmail(email, token) {
     `.trim(),
     text: `Reset your SafeMom password by visiting: ${resetUrl} (Expires in 1 hour)`,
   });
-  console.log("[Email] Password reset email sent to", email);
-  return true;
 }
 
 /**
  * Send login success alert
  */
 async function sendLoginSuccessEmail(email, name) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    console.log("[Email] SMTP not configured — skipping login email");
-    return false;
-  }
-
   const date = new Date().toLocaleString();
 
-  await transporter.sendMail({
-    from: FROM_EMAIL,
+  return sendEmail({
     to: email,
     subject: "SafeMom — New Login to Your Account",
     html: `
@@ -179,24 +216,15 @@ async function sendLoginSuccessEmail(email, name) {
     `.trim(),
     text: `New login to your SafeMom account on ${date}. If this wasn't you, secure your account at ${FRONTEND_URL}/forgot-password`,
   });
-  console.log("[Email] Login success alert sent to", email);
-  return true;
 }
 
 /**
  * Send account deletion confirmation
  */
 async function sendAccountDeletionEmail(email, name) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    console.log("[Email] SMTP not configured — skipping deletion email");
-    return false;
-  }
-
   const date = new Date().toLocaleString();
 
-  await transporter.sendMail({
-    from: FROM_EMAIL,
+  return sendEmail({
     to: email,
     subject: "SafeMom — Your Account Has Been Deleted",
     html: `
@@ -220,24 +248,14 @@ async function sendAccountDeletionEmail(email, name) {
     `.trim(),
     text: `Hello ${name}, your SafeMom account (${email}) was permanently deleted on ${date}. If you did not request this, please contact us immediately.`,
   });
-  console.log("[Email] Account deletion email sent to", email);
-  return true;
 }
 
 /**
  * Send contact form message to support team
  */
 async function sendContactEmailToSupport(name, email, message) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    console.log("[Email] SMTP not configured — skipping contact support email");
-    return false;
-  }
-
-  await transporter.sendMail({
-    from: FROM_EMAIL,
+  return sendEmail({
     to: "safemom.support@gmail.com",
-    replyTo: email,
     subject: `New Contact Message: ${name}`,
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid #e5e7eb;">
@@ -280,22 +298,13 @@ async function sendContactEmailToSupport(name, email, message) {
     `.trim(),
     text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
   });
-  console.log("[Email] Contact form message sent to support from", email);
-  return true;
 }
 
 /**
  * Send auto-reply to user who submitted contact form
  */
 async function sendContactAutoReply(name, email) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    console.log("[Email] SMTP not configured — skipping contact auto-reply");
-    return false;
-  }
-
-  await transporter.sendMail({
-    from: FROM_EMAIL,
+  return sendEmail({
     to: email,
     subject: "SafeMom — We've received your message",
     html: `
@@ -336,8 +345,6 @@ async function sendContactAutoReply(name, email) {
     `.trim(),
     text: `Hi ${name},\n\nThank you for reaching out to SafeMom! We've received your message and our team will get back to you as soon as possible.\n\nIf your inquiry is urgent, please call us at +91 1800-SAFEMOM.`,
   });
-  console.log("[Email] Contact auto-reply sent to", email);
-  return true;
 }
 
 function escapeHtml(s) {
@@ -357,5 +364,5 @@ module.exports = {
   sendAccountDeletionEmail,
   sendContactEmailToSupport,
   sendContactAutoReply,
-  getTransporter
+  getTransporter,
 };

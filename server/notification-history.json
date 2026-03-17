@@ -1,6 +1,50 @@
 {
   "notifications": [
     {
+      "id": "1773732775255",
+      "timestamp": "2026-03-17T07:32:55.255Z",
+      "status": "success",
+      "riskLevel": "risky",
+      "recipient": "unknown0506hacker@gmail.com",
+      "summary": "HR 130, BP 140, SpO2 91, Glucose 99",
+      "messagePreview": "Hi Tej,\n\nBased on your current vital signs and symptoms, your overall health status is classified as...",
+      "messageId": "<6b70b722-1f2d-4a97-91ba-8b44747e49eb@gmail.com>",
+      "response": "250 2.0.0 OK  1773732772 98e67ed59e1d1-35badc0bc30sm2073787a91.17 - gsmtp"
+    },
+    {
+      "id": "1773732772000",
+      "timestamp": "2026-03-17T07:32:52.001Z",
+      "status": "success",
+      "riskLevel": "risky",
+      "recipient": "asha@safemom.com",
+      "summary": "HR 130, BP 140, SpO2 91, Glucose 99",
+      "messagePreview": "Hi Rani Devi and your patient Tanu,\n\nBased on your current vital signs and symptoms, your overall he...",
+      "messageId": "<aa407849-7b50-8400-b4ed-e14bf30db13e@gmail.com>",
+      "response": "250 2.0.0 OK  1773732769 d2e1a72fcca58-82a0725da07sm15575256b3a.19 - gsmtp"
+    },
+    {
+      "id": "1773732768653",
+      "timestamp": "2026-03-17T07:32:48.653Z",
+      "status": "success",
+      "riskLevel": "risky",
+      "recipient": "eswardhavala1@gmail.com",
+      "summary": "HR 130, BP 140, SpO2 91, Glucose 99",
+      "messagePreview": "Hi Tej and your patient Tanu,\n\nBased on your current vital signs and symptoms, your overall health s...",
+      "messageId": "<f712c4c1-a4f1-2f47-831a-ea6ef932c3f6@gmail.com>",
+      "response": "250 2.0.0 OK  1773732765 d9443c01a7336-2aece7ee4a1sm169465045ad.54 - gsmtp"
+    },
+    {
+      "id": "1773732765317",
+      "timestamp": "2026-03-17T07:32:45.317Z",
+      "status": "success",
+      "riskLevel": "risky",
+      "recipient": "tanujach979@gmail.com",
+      "summary": "HR 130, BP 140, SpO2 91, Glucose 99",
+      "messagePreview": "Hi Tanu,\n\nBased on your current vital signs and symptoms, your overall health status is classified a...",
+      "messageId": "<315154d3-3f5c-65e5-aa30-ebefa26e54d6@gmail.com>",
+      "response": "250 2.0.0 OK  1773732762 98e67ed59e1d1-35bada1d84fsm2316723a91.1 - gsmtp"
+    },
+    {
       "id": "1773688612741",
       "timestamp": "2026-03-16T19:16:52.741Z",
       "status": "success",

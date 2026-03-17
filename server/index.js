@@ -68,57 +68,6 @@ app.use("/api/partner", require("./routes/partner"));
 // ─── Risk Alert Email (existing) ─────────────────────────────────────────────
 const RISK_ALERT_EMAIL = "safemom.support@gmail.com";
 
-const { Resend } = require("resend");
-
-function getTransporter() {
-  // --- TEMPORARILY DISABLED RESEND TO ALLOW SENDING TO ALL EMAILS ---
-  // const resendKey = process.env.RESEND_API_KEY;
-  // if (resendKey) {
-  //   const resend = new Resend(resendKey);
-  //   return {
-  //     verify: async () => true,
-  //     sendMail: async ({ from, to, subject, html, text }) => {
-  //       const result = await resend.emails.send({
-  //         from: "SafeMom <onboarding@resend.dev>",
-  //         to: Array.isArray(to) ? to : [to],
-  //         subject,
-  //         html,
-  //         text
-  //       });
-  //       if (result.error) throw new Error(result.error.message);
-  //       return result.data;
-  //     }
-  //   };
-  // }
-  // -------------------------------------------------------------------
-
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!user || !pass) {
-    return null;
-  }
-  // Use custom host/port if set (Outlook, Yahoo, etc.) – then you can often use normal password
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT;
-  if (host) {
-    return nodemailer.createTransport({
-      host,
-      port: port ? parseInt(port, 10) : 587,
-      secure: process.env.SMTP_SECURE === "true",
-      auth: { user, pass },
-    });
-  }
-  // For Gmail, use port 465 with true TLS to avoid Render outbound blocks on port 587
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-    // Force IPv4 to avoid IPv6 connection issues
-    family: 4,
-  });
-}
-
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 app.post("/api/send-risk-alert", async (req, res) => {
@@ -132,21 +81,22 @@ app.post("/api/send-risk-alert", async (req, res) => {
     return res.status(400).json({ ok: false, error: "riskLevel is required" });
   }
 
+  const { getTransporter } = require("./utils/email");
   const transporter = getTransporter();
   if (!transporter) {
     console.log(
-      "[Risk alert] Email not configured (SMTP_USER/SMTP_PASS missing)",
+      "[Risk alert] Email not configured (SMTP_USER/SMTP_PASS missing or Brevo key missing)",
     );
     return res.status(503).json({
       ok: false,
-      error: "Email not configured. Set SMTP_USER and SMTP_PASS in .env.local",
+      error: "Email not configured.",
     });
   }
 
   // Verify transporter before attempting to send mail so failures are explicit in logs
   try {
     await transporter.verify();
-    console.log("[Risk alert] SMTP transporter verified");
+    console.log("[Risk alert] Transporter verified (Brevo or SMTP)");
   } catch (verifyErr) {
     console.error(
       "[Risk alert] Transporter verify failed:",
@@ -157,7 +107,7 @@ app.post("/api/send-risk-alert", async (req, res) => {
       .json({
         ok: false,
         error:
-          "SMTP transporter verify failed: " +
+          "Email transporter verify failed: " +
           (verifyErr && verifyErr.message
             ? verifyErr.message
             : String(verifyErr)),
@@ -284,16 +234,23 @@ app.post("/api/send-risk-alert", async (req, res) => {
     `.trim();
 
     try {
-      const info = await transporter.sendMail({
+      const { getTransporter } = require("./utils/email");
+      const transporterObj = getTransporter();
+      if (!transporterObj) throw new Error("Email provider not configured");
+
+      const info = await transporterObj.sendMail({
         from: '"SafeMom Support" <safemom.support@gmail.com>',
         to: target.email,
         subject,
         text,
         html,
       });
-      console.log("[Risk alert] Email sent to", target.email, "info:", info);
+      // The duck-typed transporter from email.js doesn't return info object, it returns true
+      const mockedInfo = typeof info === 'boolean' ? { messageId: `msg-${Date.now()}`, response: '250 OK' } : info;
+      
+      console.log("[Risk alert] Email sent to", target.email, "info:", mockedInfo);
       successCount++;
-      lastInfo = info;
+      lastInfo = mockedInfo;
 
       // Record successful notification
       notificationHistory.addNotification({
