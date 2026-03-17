@@ -5,6 +5,8 @@
   <p>AI-Driven IoT-Based Maternal Health Monitoring and Preventive Care Platform</p>
   <p><em>Empowering mothers, equipping doctors, engaging partners, and supporting ASHA workers with real-time AI-driven health tracking.</em></p>
 
+  [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_SafeMOM-7c3aed?style=for-the-badge)](https://safe-mom-xi.vercel.app/)
+
   ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
   ![React](https://img.shields.io/badge/React_18-61DAFB?style=flat&logo=react&logoColor=black)
   ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
@@ -18,18 +20,43 @@
 ## 📖 Table of Contents
 
 1. [Project Overview](#-project-overview)
-2. [Problem Statement](#-problem-statement)
-3. [Objectives](#-objectives)
-4. [System Architecture](#%EF%B8%8F-system-architecture)
-5. [Hardware Components](#-hardware-components)
-6. [Software Architecture](#-software-architecture)
-7. [User Roles & Dashboards](#-user-roles--dashboards)
-8. [Key Components (Frontend)](#-key-components-frontend)
-9. [Backend API & Database](#%EF%B8%8F-backend-api--database)
-10. [System Workflow](#-system-workflow)
-11. [Installation & Setup](#-installation--setup)
-12. [Environment Variables](#-environment-variables)
-13. [Future Roadmap](#-future-roadmap)
+2. [Live Demo](#-live-demo)
+3. [Demo Accounts](#-demo-accounts)
+4. [Problem Statement](#-problem-statement)
+5. [Objectives](#-objectives)
+6. [System Architecture](#%EF%B8%8F-system-architecture)
+7. [Hardware Components](#-hardware-components)
+8. [Software Architecture](#-software-architecture)
+9. [User Roles & Dashboards](#-user-roles--dashboards)
+10. [Key Components (Frontend)](#-key-components-frontend)
+11. [Backend API & Database](#%EF%B8%8F-backend-api--database)
+12. [System Workflow](#-system-workflow)
+13. [Installation & Setup](#-installation--setup)
+14. [Environment Variables](#-environment-variables)
+15. [Future Roadmap](#-future-roadmap)
+
+---
+
+## 🌐 Live Demo
+
+> **Try SafeMOM now → [https://safe-mom-xi.vercel.app/](https://safe-mom-xi.vercel.app/)**
+
+Use the demo accounts below to explore the platform across all four user roles.
+
+---
+
+## 🔑 Demo Accounts
+
+The following pre-verified accounts are automatically seeded when the server starts. Use them to explore the platform:
+
+| Role | Name | Email | Password |
+|------|------|-------|----------|
+| 🩺 **Doctor** | Dr. Clinician | `doctor@safemom.com` | `doctor123` |
+| 🤝 **ASHA Worker** | Rani Devi | `asha@safemom.com` | `asha123` |
+| 🤰 **Mother** | Priya Sharma | `priya@safemom.com` | `priya123` |
+| ❤️ **Partner** | Arjun Sharma | `partner@safemom.com` | `partner123` |
+
+> **Mother Profile Details:** Age 28 · Gestation Week 24 · Blood Group B+ · First Pregnancy · No chronic conditions · No medications
 
 ---
 
