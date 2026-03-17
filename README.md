@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://i.ibb.co/6y4GbsT/SafeMOM-Logo.png" alt="SafeMOM Logo" width="200" style="border-radius:20px;"/>
+  <img src="public/safemom-logo.png" alt="SafeMOM Logo" width="200" style="border-radius:20px;"/>
   <h1>SafeMOM 🤰💙</h1>
   <p><strong>SAFE MATERNAL ONGOING MONITORING BAND</strong></p>
   <p>AI-Driven IoT-Based Maternal Health Monitoring and Preventive Care Platform</p>
